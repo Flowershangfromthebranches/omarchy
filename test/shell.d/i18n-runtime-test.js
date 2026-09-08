@@ -3,7 +3,7 @@ const assert = require("assert")
 const fs = require("fs")
 const I18nModel = require("../../shell/Commons/I18nModel.js")
 const MenuModel = require("../../shell/plugins/menu/MenuModel.js")
-const zhCatalog = require("../../localization/zh_CN/translations.json")
+const zhCatalog = require("../../shell/Commons/i18n/zh_CN.js")
 
 console.log("Running comprehensive i18n automated tests...")
 

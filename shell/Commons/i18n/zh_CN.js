@@ -1,4 +1,4 @@
-{
+var catalog = {
   "": {
     "language": "zh_CN",
     "plural-forms": "nplurals=1; plural=0;"
@@ -162,4 +162,8 @@
   "Balanced": "平衡",
   "Power-saver": "节能",
   "Quiet": "安静"
+}
+
+if (typeof module !== "undefined") {
+  module.exports = catalog
 }

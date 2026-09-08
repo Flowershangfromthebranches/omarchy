@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import "I18nModel.js" as Model
-import "../../localization/zh_CN/translations.json" as ZhCatalog
+import "i18n/zh_CN.js" as ZhCN
 
 QtObject {
   id: root
@@ -20,7 +20,7 @@ QtObject {
 
   property var _registry: {
     var reg = Model.createRegistry()
-    reg.registerCatalog("zh_CN", ZhCatalog)
+    reg.registerCatalog("zh_CN", ZhCN.catalog)
     return reg
   }
 
