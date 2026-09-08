@@ -58,14 +58,19 @@
 
 ## 3. 边界划分：GUI vs CLI vs 系统环境
 
+> **核心判定准则：看最终输出展示在哪里（Destination-driven localization）。**
+> `Bash != automatically English`。脚本如果产生的是最终显示在桌面 GUI 的通知、OSD 或图形选择器，必须本地化；如果是终端口令、CLI 帮助、终端日志或终端提示符，保持英文。
+
 | 层次 | 语言策略 | 说明 |
 | :--- | :--- | :--- |
-| **Shell GUI 表现层** | 简体中文 | 顶层菜单、系统菜单、核心控制面板、确认对话框、通用操作按钮、状态提示 |
+| **Shell GUI 表现层 (QML)** | 简体中文 | 顶层菜单、系统菜单、核心控制面板、确认对话框、通用操作按钮、状态提示、占位文本、空状态 |
+| **图形通知与桌面 OSD (Shell Scripts)** | 简体中文 | `omarchy-notification-send`、`omarchy-osd`、`omarchy-menu-select` 等产生的桌面图形提示通过 `omarchy-i18n` 本地化 |
+| **第三方通知与应用内容** | 保持原样 (English) | Notification Server 绝不能全局调用 `I18n.tr` 篡改第三方应用发送的通知 summary/body |
 | **搜索别名 (Aliases)** | 英文 + 中文并存 | 允许用户输入 `Setup` 或 `设置` 均能匹配，不破坏英文文档可搜索性 |
-| **CLI 命令行** | 英文 (English) | `omarchy --help`、子命令、参数、终端输出保持官方英文 |
+| **CLI 命令行** | 英文 (English) | `omarchy --help`、子命令、参数、终端输出、gum 终端选择器保持官方英文 |
 | **系统日志 / 报错** | 英文 (English) | `systemctl`、`journalctl`、调试输出保持英文，便于搜索定位 |
 | **机器标识与配置键** | 英文 (English) | 菜单 ID、插件 ID、命令名、环境变量、JSON 键绝对不得翻译 |
-| **安装程序 / 底层配置** | 英文 (English) | 键盘布局选择、主机名等底层第一阶段保持英文 |
+| **动态用户数据** | 保持原样 (Dynamic) | SSID、蓝牙设备名、IP、网关、时区标识、用户名、主机名、文件路径等严禁翻译 |
 
 ---
 
