@@ -13,10 +13,24 @@ function normalizeLocale(value) {
   if (!locale) return ""
   locale = locale.split(".")[0].split("@")[0].replace(/-/g, "_")
   if (locale === "C" || locale === "POSIX") return ""
-  var parts = locale.split("_")
+  var parts = locale.split("_").filter(Boolean)
+  if (parts.length === 0) return ""
   var language = parts[0].toLowerCase()
   if (!language) return ""
-  return parts.length > 1 && parts[1] ? language + "_" + parts[1].toUpperCase() : language
+  var result = [language]
+  for (var i = 1; i < parts.length; i++) {
+    var p = parts[i]
+    if (p.length === 4) {
+      // Script: Title Case (e.g. Hans, Hant, Latn)
+      result.push(p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    } else if (p.length === 2 || p.length === 3) {
+      // Region: Uppercase (e.g. CN, TW, SG, HK, MO, US)
+      result.push(p.toUpperCase())
+    } else {
+      result.push(p)
+    }
+  }
+  return result.join("_")
 }
 
 function localeCandidates(environment) {
@@ -28,8 +42,18 @@ function localeCandidates(environment) {
   for (var i = 0; i < requested.length; i++) {
     var normalized = normalizeLocale(requested[i])
     if (!normalized) continue
-    var language = normalized.split("_")[0]
+    var parts = normalized.split("_")
+    var language = parts[0]
     if (candidates.indexOf(normalized) === -1) candidates.push(normalized)
+    if (parts.length > 2) {
+      // e.g. zh_Hans_CN -> fallback to zh_Hans, zh_CN
+      var script = parts[1]
+      var region = parts[2]
+      var langScript = language + "_" + script
+      var langRegion = language + "_" + region
+      if (candidates.indexOf(langScript) === -1) candidates.push(langScript)
+      if (candidates.indexOf(langRegion) === -1) candidates.push(langRegion)
+    }
     if (candidates.indexOf(language) === -1) candidates.push(language)
     if (language === "en") break
   }
@@ -61,12 +85,16 @@ function createRegistry() {
   var catalogs = {} // locale -> catalog map
   var currentLocale = "en"
 
-  function registerCatalog(locale, catalog) {
+  function registerCatalog(locale, catalog, aliases) {
     var norm = normalizeLocale(locale)
     if (!norm || !catalog) return
     catalogs[norm] = catalog
-    var lang = norm.split("_")[0]
-    if (!catalogs[lang]) catalogs[lang] = catalog
+    if (Array.isArray(aliases)) {
+      for (var i = 0; i < aliases.length; i++) {
+        var aliasNorm = normalizeLocale(aliases[i])
+        if (aliasNorm) catalogs[aliasNorm] = catalog
+      }
+    }
   }
 
   function setLocale(locale) {
@@ -80,6 +108,14 @@ function createRegistry() {
       if (c) return c
     }
     return null
+  }
+
+  function resolveLocale(candidates) {
+    var cand = Array.isArray(candidates) ? candidates : [currentLocale]
+    for (var i = 0; i < cand.length; i++) {
+      if (catalogs[cand[i]]) return cand[i]
+    }
+    return "en"
   }
 
   function translate(source, options) {
@@ -112,6 +148,7 @@ function createRegistry() {
     registerCatalog: registerCatalog,
     setLocale: setLocale,
     getCatalog: getCatalog,
+    resolveLocale: resolveLocale,
     translate: translate,
     catalogs: catalogs
   }

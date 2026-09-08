@@ -67,7 +67,7 @@ Panel {
   // The interface is English throughout, so day names are not taken from the
   // system locale. Where the week starts still is: that is a regional
   // convention rather than a translation, and it stays overridable above.
-  readonly property var labelLocale: I18n.isChinese ? Qt.locale("zh_CN") : Qt.locale("en_US")
+  readonly property var labelLocale: I18n.isSimplifiedChinese ? Qt.locale("zh_CN") : Qt.locale("en_US")
   readonly property string nextWeekStartLabel: labelLocale.dayName(Model.toggledWeekStart(weekStart), Locale.LongFormat)
   readonly property var weekdays: Model.weekdayOrder(weekStart)
   readonly property var weeks: Model.monthGrid(viewYear, viewMonth, weekStart, todayKey)

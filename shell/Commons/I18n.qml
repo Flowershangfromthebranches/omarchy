@@ -16,11 +16,12 @@ QtObject {
   })
 
   readonly property string language: candidates.length > 0 ? candidates[0].split("_")[0] : "en"
-  readonly property bool isChinese: language === "zh"
+  readonly property string activeLocale: _registry.resolveLocale(candidates)
+  readonly property bool isSimplifiedChinese: activeLocale === "zh_CN" || activeLocale === "zh_SG" || activeLocale === "zh_Hans"
 
   property var _registry: {
     var reg = Model.createRegistry()
-    reg.registerCatalog("zh_CN", ZhCN.catalog)
+    reg.registerCatalog("zh_CN", ZhCN.catalog, ["zh_SG", "zh_Hans"])
     return reg
   }
 
