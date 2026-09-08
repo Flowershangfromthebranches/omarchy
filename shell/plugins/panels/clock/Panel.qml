@@ -338,7 +338,7 @@ Panel {
 
               PanelToolTip {
                 visible: heroMouse.containsMouse
-                text: I18n.tr("Back to today")
+                text: "Back to today"
                 fontFamily: root.contentFontFamily
               }
             }
@@ -737,7 +737,7 @@ Panel {
                 anchors.leftMargin: -Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰅁"
-                tooltipText: I18n.tr("Previous month")
+                tooltipText: "Previous month"
                 foreground: root.contentForeground
                 fontFamily: root.contentFontFamily
                 onClicked: root.moveMonth(-1)
@@ -748,7 +748,7 @@ Panel {
                 anchors.rightMargin: -Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
                 iconText: "󰅂"
-                tooltipText: I18n.tr("Next month")
+                tooltipText: "Next month"
                 foreground: root.contentForeground
                 fontFamily: root.contentFontFamily
                 onClicked: root.moveMonth(1)

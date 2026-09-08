@@ -29,6 +29,7 @@ BorderSurface {
 
   property string iconText: ""
   property string tooltipText: ""
+  property bool translateTooltip: true
   property color foreground: Color.foreground
   property color hoverColor: foreground
   property string fontFamily: Style.font.family
@@ -94,7 +95,8 @@ BorderSurface {
 
   PanelToolTip {
     visible: root.tooltipText !== "" && mouse.containsMouse
-    text: root.tooltipText !== "" ? I18n.tr(root.tooltipText) : ""
+    translateText: root.translateTooltip
+    text: root.tooltipText
     fontFamily: root.fontFamily
   }
 }

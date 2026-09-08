@@ -1184,7 +1184,7 @@ Panel {
             id: qrAction
             visible: root.canShareWifi
             iconText: "󰐲"
-            tooltipText: I18n.tr("Show QR code")
+            tooltipText: "Show QR code"
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
             iconSize: Style.font.subtitle * 1.5
@@ -1200,7 +1200,7 @@ Panel {
             id: speedAction
             visible: root.canRunSpeedTest
             iconText: "󰓅"
-            tooltipText: I18n.tr("Run a speed test")
+            tooltipText: "Run a speed test"
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
             iconSize: Style.font.subtitle * 1.5
@@ -1300,7 +1300,7 @@ Panel {
         Button {
           id: portalAction
           width: parent.width
-          text: I18n.tr("Open Captive Portal")
+          text: "Open Captive Portal"
           iconText: "󰏌"
           foreground: root.bar.urgent
           accent: root.bar.urgent
@@ -1370,13 +1370,13 @@ Panel {
           DetailValue {
             text: root.info.ip || "--"
             copyable: !!root.info.ip
-            tooltipText: I18n.tr("Copy IP")
+            tooltipText: "Copy IP"
           }
           InfoLabel { text: I18n.tr("Gateway") }
           DetailValue {
             text: root.info.gateway || "--"
             copyable: !!root.info.gateway
-            tooltipText: I18n.tr("Copy gateway")
+            tooltipText: "Copy gateway"
           }
         }
       }
@@ -1538,7 +1538,7 @@ Panel {
           DnsProviderPill {
             provider: "DHCP"
             index: 0
-            tooltipText: I18n.tr("Use DNS from DHCP")
+            tooltipText: "Use DNS from DHCP"
             width: dnsRow.cellWidth
             onClicked: root.setDns(provider)
           }
@@ -1546,7 +1546,7 @@ Panel {
           DnsProviderPill {
             provider: "Cloudflare"
             index: 1
-            tooltipText: I18n.tr("Set DNS to Cloudflare")
+            tooltipText: "Set DNS to Cloudflare"
             width: dnsRow.cellWidth
             onClicked: root.setDns(provider)
           }
@@ -1554,7 +1554,7 @@ Panel {
           DnsProviderPill {
             provider: "Google"
             index: 2
-            tooltipText: I18n.tr("Set DNS to Google")
+            tooltipText: "Set DNS to Google"
             width: dnsRow.cellWidth
             onClicked: root.setDns(provider)
           }
@@ -1562,7 +1562,7 @@ Panel {
           DnsProviderPill {
             provider: "Custom"
             index: 3
-            tooltipText: I18n.tr("Set custom DNS servers")
+            tooltipText: "Set custom DNS servers"
             width: dnsRow.cellWidth
             onClicked: root.setDns(provider)
           }
@@ -1886,7 +1886,7 @@ Panel {
 
         PanelToolTip {
           visible: rightMouse.containsMouse || row.forgetFocused
-          text: I18n.tr("Forget network")
+          text: "Forget network"
           fontFamily: root.bar.fontFamily
         }
       }
