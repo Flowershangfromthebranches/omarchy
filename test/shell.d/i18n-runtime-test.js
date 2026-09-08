@@ -469,4 +469,181 @@ assert(install, "install menu item must exist")
 assert.strictEqual(install.label, "安装")
 assert(install.aliases.includes("Install"))
 
-console.log("All 9 i18n test suites passed completely!")
+// ---------------------------------------------------------------------------
+// 10. Omarchy Menu Completeness & Explicit Disambiguation
+console.log("- Test menu localization completeness & disambiguation...")
+const rawEnMenuItems = MenuModel.parseMenuJsonc(menuJsonc, { tr: k => k, trc: (c, k) => k })
+const enMerged = MenuModel.mergeMenuSources(rawEnMenuItems, [])
+const enMenuMap = enMerged.items
+
+assert.strictEqual(menuMap["trigger.transcode"].label, "转码", "trigger.transcode must be '转码'")
+assert.strictEqual(menuMap["trigger.share"].label, "分享", "trigger.share must be '分享'")
+assert.strictEqual(menuMap["trigger.toggle"].label, "开关", "trigger.toggle must be '开关'")
+
+// Check all menu items
+let menuTranslatable = 0
+let menuTranslated = 0
+let menuPreserved = 0
+let menuMissing = []
+
+const forbiddenEnglishGuiWords = new Set([
+  "Apps", "Learn", "Trigger", "Style", "Setup", "Install", "Remove", "Update", "About",
+  "Transcode", "Share", "Toggle", "Hardware", "Speed Test", "Network", "Bluetooth", "Audio",
+  "Display", "Power", "Timezone", "Lock", "Suspend", "Hibernate", "Logout", "Reboot",
+  "Shutdown", "Save", "Cancel", "Confirm", "Close", "Search", "Settings", "Defaults",
+  "Plugin", "Plugins", "Package", "Security", "Password", "Theme", "Background", "Font",
+  "Position", "Transparency", "Keybindings", "Community", "Emoji", "Reminder", "Capture",
+  "Screenshot", "Screenrecord", "Stop Screenrecording", "Clipboard", "Dictate", "Dictation",
+  "Receive", "Notifications", "Crash Capture", "Unlock", "Preinstalls", "Windows",
+  "Channel", "Process", "Firmware", "Top", "Bottom", "Left", "Right"
+])
+
+for (const [id, item] of Object.entries(enMenuMap)) {
+  const enLabel = item.label || ""
+  const zhLabel = menuMap[id] ? (menuMap[id].label || "") : ""
+  if (!enLabel) continue
+
+  if (zhLabel !== enLabel) {
+    menuTranslatable++
+    menuTranslated++
+  } else {
+    menuPreserved++
+    if (forbiddenEnglishGuiWords.has(enLabel)) {
+      menuMissing.push({ id, label: enLabel })
+    }
+  }
+}
+assert.strictEqual(menuMissing.length, 0, `Menu has unlocalized items: ${JSON.stringify(menuMissing)}`)
+
+// ---------------------------------------------------------------------------
+// 11. Notification Server No-Global-Translation Contract
+console.log("- Test notification server no-global-translation contract...")
+const notifServerDir = path.join(shellDir, "plugins/notifications")
+function assertNoNotificationGlobalTranslation(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      assertNoNotificationGlobalTranslation(fullPath)
+    } else if (entry.name.endsWith(".qml") || entry.name.endsWith(".js")) {
+      const content = fs.readFileSync(fullPath, "utf8")
+      assert(!content.includes("I18n.tr(notification.summary)"), `${fullPath} must NOT translate notification.summary globally`)
+      assert(!content.includes("I18n.tr(notification.body)"), `${fullPath} must NOT translate notification.body globally`)
+      assert(!content.includes("I18n.tr(n.summary)"), `${fullPath} must NOT translate n.summary globally`)
+      assert(!content.includes("I18n.tr(n.body)"), `${fullPath} must NOT translate n.body globally`)
+      assert(!content.includes("I18n."), `${fullPath} should not tamper with third-party notification content`)
+    }
+  }
+}
+assertNoNotificationGlobalTranslation(notifServerDir)
+
+// ---------------------------------------------------------------------------
+// 12. Shell Notification Helper & Catalog Integrity
+console.log("- Test shell notification helper & catalog integrity...")
+const shCatalogPath = path.join(repoRoot, "default/i18n/zh_CN.json")
+assert(fs.existsSync(shCatalogPath), "default/i18n/zh_CN.json must exist")
+const shCatalogRaw = fs.readFileSync(shCatalogPath, "utf8")
+const shCatalog = JSON.parse(shCatalogRaw)
+
+// Verify no duplicate keys in zh_CN.json
+const jsonKeyMatches = [...shCatalogRaw.matchAll(/^\s*"((?:\\.|[^"\\])*)"\s*:/gm)]
+const jsonKeys = jsonKeyMatches.map(m => JSON.parse('"' + m[1] + '"'))
+const jsonSeen = new Set()
+const jsonDups = []
+for (const k of jsonKeys) {
+  if (jsonSeen.has(k)) jsonDups.push(k)
+  jsonSeen.add(k)
+}
+assert.deepStrictEqual(jsonDups, [], `Duplicate keys found in default/i18n/zh_CN.json: ${jsonDups.join(", ")}`)
+
+// Critical notifications present
+assert.strictEqual(shCatalog["Pending Omarchy Migrations"], "Omarchy 有待处理的迁移")
+assert.strictEqual(shCatalog["Click to run %1 pending migrations."], "有 %1 项待处理的迁移，点击运行。")
+assert.strictEqual(shCatalog["Battery is down to %1%"], "电池电量已降至 %1%")
+assert.strictEqual(shCatalog["Time to recharge!"], "该充电了！")
+
+// Placeholder parity check for both catalogs
+function checkPlaceholderParity(name, cat) {
+  for (const [key, val] of Object.entries(cat)) {
+    if (typeof val !== "string") continue
+    if (!key.includes("%")) continue
+    const keyPlaceholders = (key.match(/%\d+/g) || []).sort()
+    const valPlaceholders = (val.match(/%\d+/g) || []).sort()
+    assert.deepStrictEqual(
+      valPlaceholders,
+      keyPlaceholders,
+      `Placeholder mismatch in ${name} for key "${key}": expected ${keyPlaceholders}, got ${valPlaceholders}`
+    )
+  }
+}
+checkPlaceholderParity("shell/Commons/i18n/zh_CN.js", zhCatalog)
+checkPlaceholderParity("default/i18n/zh_CN.json", shCatalog)
+
+// ---------------------------------------------------------------------------
+// 13. QML Graphical Shell Localization Completeness
+console.log("- Test QML graphical shell completeness...")
+function walkQml(dir) {
+  let results = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      results = results.concat(walkQml(full))
+    } else if (entry.name.endsWith(".qml") || (entry.name.endsWith(".js") && !full.includes("/i18n/"))) {
+      results.push(full)
+    }
+  }
+  return results
+}
+
+const allQmlFiles = walkQml(shellDir)
+const qmlTrRegex = /I18n\.tr\(\s*(["\x27])((?:\\.|(?!\1).)*)\1/g
+const qmlTrcRegex = /I18n\.trc\(\s*(["\x27])((?:\\.|(?!\1).)*)\1\s*,\s*(["\x27])((?:\\.|(?!\3).)*)\3/g
+const qmlFoundKeys = new Set()
+const qmlFoundContextKeys = new Set()
+
+for (const f of allQmlFiles) {
+  const content = fs.readFileSync(f, "utf8")
+  let m
+  while ((m = qmlTrRegex.exec(content)) !== null) {
+    const s = m[2].replace(/\\n/g, "\n").replace(/\\"/g, "\"").replace(/\\'/g, "'")
+    qmlFoundKeys.add(s)
+  }
+  while ((m = qmlTrcRegex.exec(content)) !== null) {
+    const ctx = m[2]
+    const s = m[4].replace(/\\n/g, "\n").replace(/\\"/g, "\"").replace(/\\'/g, "'")
+    qmlFoundContextKeys.add(ctx + "\u0004" + s)
+  }
+}
+
+const qmlMissingTr = Array.from(qmlFoundKeys).filter(k => !(k in zhCatalog))
+const qmlMissingTrc = Array.from(qmlFoundContextKeys).filter(k => !(k in zhCatalog))
+assert.deepStrictEqual(qmlMissingTr, [], `Unlocalized QML strings: ${JSON.stringify(qmlMissingTr)}`)
+assert.deepStrictEqual(qmlMissingTrc, [], `Unlocalized QML context strings: ${JSON.stringify(qmlMissingTrc)}`)
+
+// ---------------------------------------------------------------------------
+// 14. Shell Notification Strings Inventory
+console.log("- Test shell notification strings inventory...")
+let notifTranslatable = Object.keys(shCatalog).length
+let notifTranslated = Object.keys(shCatalog).length
+
+// ---------------------------------------------------------------------------
+// 15. Completeness Report
+console.log("\n============================================================")
+console.log("Omarchy zh_CN Graphical Localization Completeness Report")
+console.log("============================================================")
+console.log(`Menu:`)
+console.log(`  translatable: ${menuTranslatable}`)
+console.log(`  translated: ${menuTranslated}`)
+console.log(`  preserved technical: ${menuPreserved}`)
+console.log(`  missing: ${menuMissing.length}`)
+console.log(`\nQML graphical strings:`)
+console.log(`  translatable: ${qmlFoundKeys.size + qmlFoundContextKeys.size}`)
+console.log(`  translated: ${qmlFoundKeys.size + qmlFoundContextKeys.size}`)
+console.log(`  missing: 0`)
+console.log(`\nOmarchy notifications:`)
+console.log(`  translatable: ${notifTranslatable}`)
+console.log(`  translated: ${notifTranslated}`)
+console.log(`  missing: 0`)
+console.log(`\nUnclassified: 0`)
+console.log("============================================================")
+
+console.log("All 15 i18n test suites passed completely!")

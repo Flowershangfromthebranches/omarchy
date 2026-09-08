@@ -16,11 +16,16 @@ key="$1"
 fallback="$1"
 args=()
 
-if (( $# >= 2 )); then
-  fallback="$2"
-  if (( $# >= 3 )); then
-    args=("${@:3}")
+if (( $# == 2 )); then
+  if [[ $1 == *"%1"* && $2 != *"%1"* ]]; then
+    fallback="$1"
+    args=("$2")
+  else
+    fallback="$2"
   fi
+elif (( $# >= 3 )); then
+  fallback="$2"
+  args=("${@:3}")
 fi
 
 resolve_ui_locale() {
