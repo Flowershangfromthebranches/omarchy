@@ -6,6 +6,8 @@ import qs.Commons
 // PanelSeparator and the content rows.
 Text {
   id: root
+  property string label: ""
+  text: label !== "" ? I18n.tr(label) : ""
 
   property color foreground: Color.foreground
   property string fontFamily: Style.font.family

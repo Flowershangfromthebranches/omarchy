@@ -10,9 +10,20 @@ function normalizeAliases(value) {
   return []
 }
 
-function normalizeItem(id, raw) {
+function normalizeItem(id, raw, i18n) {
   var value = raw || {}
   var aliases = normalizeAliases(value.aliases)
+  var origLabel = value.label || id
+  var origTitle = value.title || ""
+  if (i18n && typeof i18n.tr === "function") {
+    // If translation changes the label, preserve original English label in aliases
+    var transLabel = i18n.tr(origLabel)
+    if (transLabel !== origLabel) {
+      if (aliases.indexOf(origLabel) === -1) aliases.push(origLabel)
+      if (origTitle && aliases.indexOf(origTitle) === -1) aliases.push(origTitle)
+    }
+  }
+
   var parent = value.parent
   if (parent === undefined)
     parent = id.indexOf(".") >= 0 ? id.split(".").slice(0, -1).join(".") : "root"
@@ -26,8 +37,8 @@ function normalizeItem(id, raw) {
     kind: kind,
     icon: value.icon || "",
     iconFont: value.iconFont || "",
-    label: value.label || id,
-    title: value.title || "",
+    label: (i18n && typeof i18n.tr === "function") ? i18n.tr(origLabel) : origLabel,
+    title: (i18n && typeof i18n.tr === "function" && origTitle) ? i18n.tr(origTitle) : origTitle,
     target: value.target || "",
     description: value.description || "",
     action: value.action || "",
@@ -39,7 +50,7 @@ function normalizeItem(id, raw) {
   }
 }
 
-function parseMenuJsonc(raw) {
+function parseMenuJsonc(raw, i18n) {
   var stripped = stripJsonc(raw)
   if (!stripped.trim()) return []
 
@@ -58,7 +69,7 @@ function parseMenuJsonc(raw) {
   for (var id in source) {
     var entry = source[id]
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue
-    out.push(normalizeItem(id, entry))
+    out.push(normalizeItem(id, entry, i18n))
   }
   return out
 }

@@ -346,7 +346,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: "Battery"
+              text: I18n.tr("Battery")
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
@@ -461,7 +461,7 @@ Panel {
           spacing: Style.space(10)
 
           PanelSectionHeader {
-            text: "POWER PROFILE"
+            text: I18n.tr("POWER PROFILE")
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
           }

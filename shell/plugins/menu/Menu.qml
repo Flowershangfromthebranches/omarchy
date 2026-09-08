@@ -233,11 +233,11 @@ Item {
   }
 
   function normalizeItem(id, raw) {
-    return MenuModel.normalizeItem(id, raw)
+    return MenuModel.normalizeItem(id, raw, I18n)
   }
 
   function parseMenuJsonc(raw) {
-    return MenuModel.parseMenuJsonc(raw)
+    return MenuModel.parseMenuJsonc(raw, I18n)
   }
 
   // Merge defaults + user extension. Later entries override earlier ones
@@ -861,7 +861,7 @@ Item {
   function openDmenu(payload) {
     requestSerial += 1
     mode = payload.mode === "input" ? "input" : "select"
-    dmenuPrompt = String(payload.prompt || (mode === "input" ? "Input" : "Select"))
+    dmenuPrompt = I18n.tr(String(payload.prompt || (mode === "input" ? "Input" : "Select")))
     dmenuOptions = Array.isArray(payload.options) ? payload.options : []
     selectionFile = String(payload.selectionFile || "")
     doneFile = String(payload.doneFile || "")
@@ -1203,7 +1203,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: root.filterText || (root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : "Go") + "…"))
+            text: root.filterText || (root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : I18n.tr("Go")) + "…"))
             color: root.foreground
             opacity: root.filterText ? 1 : 0.58
             font.family: root.fontFamily
@@ -1459,7 +1459,7 @@ Item {
 
             Text {
               textFormat: Text.PlainText
-              text: root.filterText ? "No matches for “" + root.filterText + "”" : "Nothing here yet"
+              text: root.filterText ? I18n.tr("No matches for") + " “" + root.filterText + "”" : I18n.tr("Nothing here yet")
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily

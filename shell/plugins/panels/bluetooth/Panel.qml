@@ -183,7 +183,7 @@ Panel {
     var rows = scrollRows
     if (index < 0 || index >= rows.length) return ""
     if (index > 0 && rows[index - 1].section === rows[index].section) return ""
-    return rows[index].section === "known" ? "PAIRED" : "AVAILABLE"
+    return rows[index].section === "known" ? I18n.tr("PAIRED") : I18n.tr("AVAILABLE")
   }
 
   function audioSinks() {
@@ -738,7 +738,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: "Bluetooth"
+              text: I18n.tr("Bluetooth")
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
@@ -775,7 +775,7 @@ Panel {
           spacing: Style.space(10)
 
           PanelSectionHeader {
-            text: "CONNECTED"
+            text: I18n.tr("CONNECTED")
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
           }
@@ -1019,7 +1019,7 @@ Panel {
         anchors.verticalCenter: parent.verticalCenter
         visible: row.showForgetButton
         iconText: "󰅙"
-        tooltipText: "Forget"
+        tooltipText: I18n.tr("Forget")
         foreground: root.bar.foreground
         hoverColor: root.bar.foreground
         fontFamily: root.bar.fontFamily
