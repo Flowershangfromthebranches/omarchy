@@ -400,6 +400,7 @@ Panel {
             visible: !!root.provider
             width: parent.width
             title: root.provider ? root.provider.providerName : ""
+            translateTitle: false
             meta: root.heroMeta(root.provider)
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -478,6 +479,7 @@ Panel {
 
                 width: providerSwitch.cellWidth
                 text: modelData.providerName
+                translateText: false
                 selected: index === root.providerIndex
                 hasCursor: root.cursorActive && index === root.providerIndex
                 bordered: true
@@ -866,6 +868,7 @@ Panel {
     PanelToolTip {
       visible: dayHover.containsMouse
       text: root.dayTooltip(dayRow.day, dayRow.today)
+      translateText: false
       fontFamily: root.fontFamily
     }
   }
@@ -936,6 +939,7 @@ Panel {
     PanelToolTip {
       visible: modelHover.containsMouse
       text: root.modelTooltip(modelRow.row)
+      translateText: false
       fontFamily: root.fontFamily
     }
   }

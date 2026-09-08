@@ -750,7 +750,7 @@ Panel {
             Text {
               id: heroStatus
               textFormat: Text.PlainText
-              text: root.heroStatusText.toUpperCase()
+              text: I18n.tr(root.heroStatusText).toUpperCase()
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
@@ -867,9 +867,9 @@ Panel {
         Text {
           textFormat: Text.PlainText
           visible: root.connectedDevices.length === 0 && root.scrollRows.length === 0
-          text: !root.adapter ? "No Bluetooth adapter"
-              : !root.adapter.enabled ? "Turn Bluetooth on to scan"
-              : "Scanning for devices…"
+          text: !root.adapter ? I18n.tr("No Bluetooth adapter")
+              : !root.adapter.enabled ? I18n.tr("Turn Bluetooth on to scan")
+              : I18n.tr("Scanning for devices…")
           color: Qt.darker(root.bar.foreground, 1.5)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.bodySmall

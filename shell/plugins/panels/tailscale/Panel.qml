@@ -458,6 +458,7 @@ Panel {
               id: hero
               width: parent.width
               title: tailscale.installed ? (tailscale.selfName || "Tailscale") : "Tailscale"
+              translateTitle: false
               meta: tailscale.active ? root.heroPhraseText : "Tailscale is disconnected"
               foreground: root.foreground
               fontFamily: root.fontFamily

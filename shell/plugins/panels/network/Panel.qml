@@ -1014,8 +1014,8 @@ Panel {
     bar: root.bar
     text: root.icon
     active: root.restricted
-    tooltipText: root.hasCaptivePortal ? "Sign in to this network"
-      : (root.restricted ? "Limited internet access" : "")
+    tooltipText: root.hasCaptivePortal ? I18n.tr("Sign in to this network")
+      : (root.restricted ? I18n.tr("Limited internet access") : "")
 
     onPressed: function(b) {
       if (root.opened) root.close()
