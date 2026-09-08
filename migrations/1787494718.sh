@@ -11,7 +11,7 @@ authfile="/etc/fido2/fido2"
 report_unrepairable() {
   echo "  $1"
   echo "  $2"
-  omarchy-notification-send -u critical -g  "FIDO2 authfile needs attention" "$1 $2" || true
+  omarchy-notification-send -u critical -g  "$(omarchy-i18n "FIDO2 authfile needs attention")" "$1 $2" || true
 }
 
 # Nothing to repair on any machine that never set FIDO2 up, which is almost all

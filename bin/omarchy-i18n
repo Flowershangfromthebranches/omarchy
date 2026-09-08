@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# omarchy:summary=Translate graphical shell messages
+# omarchy:name=i18n
+# omarchy:args=[key] [english-fallback] [args...]
+# omarchy:examples=omarchy i18n "No QR code found" | omarchy i18n notification.migrations.pending.body "Click to run %1 pending migrations." 18
+# omarchy:hidden=true
+
+set -euo pipefail
+
+if (( $# == 0 )); then
+  exit 0
+fi
+
+key="$1"
+fallback="$1"
+args=()
+
+if (( $# >= 2 )); then
+  fallback="$2"
+  if (( $# >= 3 )); then
+    args=("${@:3}")
+  fi
+fi
+
+resolve_ui_locale() {
+  local raw=""
+  if [[ -n ${OMARCHY_UI_LANGUAGE:-} ]]; then
+    raw="$OMARCHY_UI_LANGUAGE"
+  elif [[ -n ${LANGUAGE:-} ]]; then
+    raw="${LANGUAGE%%:*}"
+  elif [[ -n ${LC_ALL:-} ]]; then
+    raw="$LC_ALL"
+  elif [[ -n ${LC_MESSAGES:-} ]]; then
+    raw="$LC_MESSAGES"
+  elif [[ -n ${LANG:-} ]]; then
+    raw="$LANG"
+  fi
+
+  raw="${raw%%.*}"
+  raw="${raw%%@*}"
+  raw="${raw//-/_}"
+  [[ $raw == "C" || $raw == "POSIX" ]] && raw=""
+  printf '%s' "$raw"
+}
+
+output_result() {
+  local text="$1"
+  shift
+  if (( $# > 0 )); then
+    local idx=1
+    for val in "$@"; do
+      text="${text//%$idx/$val}"
+      ((idx++))
+    done
+  fi
+  printf '%s\n' "$text"
+}
+
+locale=$(resolve_ui_locale)
+is_zh=0
+case "$locale" in
+  zh_TW|zh_HK|zh_MO|zh_Hant|zh_Hant_*)
+    is_zh=0 ;;
+  zh_CN|zh_SG|zh_Hans|zh_Hans_*)
+    is_zh=1 ;;
+  *)
+    is_zh=0 ;;
+esac
+
+if (( is_zh == 1 )); then
+  omarchy_root="${OMARCHY_PATH:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
+  catalog_file="$omarchy_root/default/i18n/zh_CN.json"
+  if [[ -f $catalog_file ]] && command -v jq >/dev/null 2>&1; then
+    translated=$(jq -r --arg k "$key" --arg f "$fallback" '.[$k] // .[$f] // empty' "$catalog_file" 2>/dev/null || true)
+    if [[ -n $translated ]]; then
+      if (( ${#args[@]} > 0 )); then
+        output_result "$translated" "${args[@]}"
+      else
+        output_result "$translated"
+      fi
+      exit 0
+    fi
+  fi
+fi
+
+if (( ${#args[@]} > 0 )); then
+  output_result "$fallback" "${args[@]}"
+else
+  output_result "$fallback"
+fi
