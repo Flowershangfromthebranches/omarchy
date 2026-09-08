@@ -1251,8 +1251,8 @@ Panel {
               // SSID even before route/details polling has returned anything.
               if (root.kind === "wifi" && root.connectedWifiNetwork) return root.connectedWifiNetwork.name || "Wi-Fi"
               if (root.info.type === "wifi") return root.info.ssid || "Wi-Fi"
-              if (root.info.type === "ethernet") return "Ethernet"
-              return root.info.iface || (root.kind === "disconnected" ? "Disconnected" : "No connection")
+              if (root.info.type === "ethernet") return I18n.tr("Ethernet")
+              return root.info.iface || (root.kind === "disconnected" ? I18n.tr("Disconnected") : I18n.tr("No connection"))
             }
             readonly property string detail: root.headerDetail()
 
@@ -1269,15 +1269,15 @@ Panel {
             textFormat: Text.PlainText
             width: parent.width
             text: {
-              if (root.hasCaptivePortal) return "SIGN-IN REQUIRED"
-              if (root.restricted) return "LIMITED INTERNET ACCESS"
+              if (root.hasCaptivePortal) return I18n.tr("SIGN-IN REQUIRED")
+              if (root.restricted) return I18n.tr("LIMITED INTERNET ACCESS")
               if (root.info.type === "wifi") {
-                if (root.canDisconnect) return root.connectionPhrase.toUpperCase()
-                if (root.kind === "disconnected") return "NOT CONNECTED"
+                if (root.canDisconnect) return I18n.tr(root.connectionPhrase).toUpperCase()
+                if (root.kind === "disconnected") return I18n.tr("NOT CONNECTED")
                 return ""
               }
-              if (root.info.type === "ethernet") return root.connectionPhrase.toUpperCase()
-              if (root.kind === "disconnected") return "NOT CONNECTED"
+              if (root.info.type === "ethernet") return I18n.tr(root.connectionPhrase).toUpperCase()
+              if (root.kind === "disconnected") return I18n.tr("NOT CONNECTED")
               return ""
             }
             visible: text !== ""
@@ -1402,7 +1402,7 @@ Panel {
 
           PanelSectionHeader {
             id: bandHeader
-            text: root.bandSectionTitle
+            text: I18n.tr(root.bandSectionTitle)
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
             anchors.left: parent.left
@@ -1449,9 +1449,10 @@ Panel {
 
               PanelToolTip {
                 visible: bandAutoSwitch.containsMouse
+                translateText: root.bandPinned
                 text: root.bandPinned
                   ? "Let Wi-Fi pick the band"
-                  : "Stay on " + root.bandLabel(root.bandCurrent)
+                  : I18n.tr("Stay on %1", [root.bandLabel(root.bandCurrent)])
                 fontFamily: root.bar.fontFamily
               }
             }
@@ -1621,7 +1622,7 @@ Panel {
 
             PanelSectionHeader {
               visible: sectionTitle !== ""
-              text: sectionTitle
+              text: sectionTitle !== "" ? I18n.tr(sectionTitle) : ""
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
               height: visible ? implicitHeight : 0
@@ -1764,12 +1765,12 @@ Panel {
     readonly property string statusText: {
       if (!net) return ""
       if (isPasswordOpen) return ""
-      if (isBusy && root.actionKind === "connect") return "Connecting…"
-      if (isBusy && root.actionKind === "disconnect") return "Disconnecting…"
-      if (isBusy && root.actionKind === "forget") return "Forgetting…"
-      if (isFailed) return root.failureReason || "Failed"
-      if (isConnected && root.kind === "wifi" && root.hasCaptivePortal) return "Sign-in required"
-      if (isConnected) return "Connected"
+      if (isBusy && root.actionKind === "connect") return I18n.tr("Connecting…")
+      if (isBusy && root.actionKind === "disconnect") return I18n.tr("Disconnecting…")
+      if (isBusy && root.actionKind === "forget") return I18n.tr("Forgetting…")
+      if (isFailed) return root.failureReason ? I18n.tr(root.failureReason) : I18n.tr("Failed")
+      if (isConnected && root.kind === "wifi" && root.hasCaptivePortal) return I18n.tr("Sign-in required")
+      if (isConnected) return I18n.tr("Connected")
       return ""
     }
 
@@ -1962,7 +1963,7 @@ Panel {
         anchors.right: connectPwBtn.left
         anchors.top: parent.top
         anchors.rightMargin: Style.space(6)
-        placeholderText: "Identity (user@domain)"
+        placeholderText: I18n.tr("Identity (user@domain)")
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         foreground: root.bar.foreground
@@ -1988,7 +1989,7 @@ Panel {
         anchors.bottomMargin: Style.spacing.rowGap / 2
         anchors.rightMargin: Style.space(6)
         password: true
-        placeholderText: "Passphrase"
+        placeholderText: I18n.tr("Passphrase")
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         foreground: root.bar.foreground
@@ -2021,7 +2022,7 @@ Panel {
           anchors.fill: parent
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
-          text: row.isFailed ? "Wrong password" : "Connecting..."
+          text: row.isFailed ? I18n.tr("Wrong password") : I18n.tr("Connecting...")
           color: row.isFailed ? root.bar.urgent : root.bar.foreground
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.bodySmall

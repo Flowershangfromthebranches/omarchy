@@ -861,7 +861,7 @@ Item {
   function openDmenu(payload) {
     requestSerial += 1
     mode = payload.mode === "input" ? "input" : "select"
-    dmenuPrompt = I18n.tr(String(payload.prompt || (mode === "input" ? "Input" : "Select")))
+    dmenuPrompt = I18n.trc("dmenu", String(payload.prompt || (mode === "input" ? "Input" : "Select")))
     dmenuOptions = Array.isArray(payload.options) ? payload.options : []
     selectionFile = String(payload.selectionFile || "")
     doneFile = String(payload.doneFile || "")
@@ -1460,7 +1460,7 @@ Item {
 
             Text {
               textFormat: Text.PlainText
-              text: root.filterText ? I18n.tr("No matches for") + " “" + root.filterText + "”" : I18n.tr("Nothing here yet")
+              text: root.filterText ? I18n.tr("No matches for “%1”", [root.filterText]) : I18n.tr("Nothing here yet")
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily

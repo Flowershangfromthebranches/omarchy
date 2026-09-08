@@ -793,7 +793,7 @@ Panel {
 
               PanelSectionHeader {
                 id: outputHeader
-                text: I18n.tr("OUTPUT")
+                text: I18n.trc("audio", "OUTPUT")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -880,7 +880,7 @@ Panel {
 
               PanelSectionHeader {
                 id: microphoneHeader
-                text: I18n.tr("INPUT")
+                text: I18n.trc("audio", "INPUT")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left

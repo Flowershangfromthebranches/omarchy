@@ -15,9 +15,18 @@ function normalizeItem(id, raw, i18n) {
   var aliases = normalizeAliases(value.aliases)
   var origLabel = value.label || id
   var origTitle = value.title || ""
-  if (i18n && typeof i18n.tr === "function") {
-    // If translation changes the label, preserve original English label in aliases
-    var transLabel = i18n.tr(origLabel)
+  var menuContext = "menu:" + id
+  var transLabel = origLabel
+  var transTitle = origTitle
+
+  if (i18n) {
+    if (typeof i18n.trc === "function") {
+      transLabel = i18n.trc(menuContext, origLabel)
+      transTitle = origTitle ? i18n.trc(menuContext, origTitle) : ""
+    } else if (typeof i18n.tr === "function") {
+      transLabel = i18n.tr(origLabel)
+      transTitle = origTitle ? i18n.tr(origTitle) : ""
+    }
     if (transLabel !== origLabel) {
       if (aliases.indexOf(origLabel) === -1) aliases.push(origLabel)
       if (origTitle && aliases.indexOf(origTitle) === -1) aliases.push(origTitle)
@@ -37,8 +46,8 @@ function normalizeItem(id, raw, i18n) {
     kind: kind,
     icon: value.icon || "",
     iconFont: value.iconFont || "",
-    label: (i18n && typeof i18n.tr === "function") ? i18n.tr(origLabel) : origLabel,
-    title: (i18n && typeof i18n.tr === "function" && origTitle) ? i18n.tr(origTitle) : origTitle,
+    label: transLabel,
+    title: transTitle,
     target: value.target || "",
     description: value.description || "",
     action: value.action || "",

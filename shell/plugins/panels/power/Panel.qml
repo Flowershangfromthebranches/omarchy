@@ -358,7 +358,7 @@ Panel {
             Text {
               id: heroStatus
               textFormat: Text.PlainText
-              text: root.heroStatusText.toUpperCase()
+              text: I18n.tr(root.heroStatusText).toUpperCase()
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
@@ -514,9 +514,9 @@ Panel {
     width: parent.width
     spacing: Style.space(8)
 
-    InfoLabel { text: label }
+    InfoLabel { text: label !== "" ? I18n.tr(label) : "" }
     Item { width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth - parent.spacing * 2); height: 1 }
-    InfoValue { text: value }
+    InfoValue { text: value !== "" ? I18n.tr(value) : "" }
   }
 
   component InfoLabel: Text {

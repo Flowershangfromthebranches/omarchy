@@ -911,13 +911,13 @@ Panel {
 
     readonly property string statusText: {
       if (!dev) return ""
-      if (action === "forgetting") return "Forgetting…"
-      if (action === "disconnecting" || devState === 2) return "Disconnecting…"
+      if (action === "forgetting") return I18n.tr("Forgetting…")
+      if (action === "disconnecting" || devState === 2) return I18n.tr("Disconnecting…")
       if (isConnected) {
         if (dev.batteryAvailable) return Math.round(dev.battery * 100) + "%"
-        return sectionName === "connected" ? "" : "Connected"
+        return sectionName === "connected" ? "" : I18n.tr("Connected")
       }
-      if (action === "connecting" || devState === 3 || dev.pairing === true) return "Connecting…"
+      if (action === "connecting" || devState === 3 || dev.pairing === true) return I18n.tr("Connecting…")
       if (isDiscovered) return ""
       return ""
     }
@@ -994,7 +994,7 @@ Panel {
 
         Text {
           textFormat: Text.PlainText
-          text: root.deviceLabel(row.dev) || "Device"
+          text: root.deviceLabel(row.dev) || I18n.tr("Device")
           color: root.bar.foreground
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
