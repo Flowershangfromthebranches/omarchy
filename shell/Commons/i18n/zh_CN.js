@@ -131,7 +131,6 @@ var catalog = {
   "Disconnecting…": "正在断开连接…",
   "Connected to %1": "已连接到 %1",
   "No connection": "无网络连接",
-  "No adapter": "没有适配器",
   "No Bluetooth adapter": "没有蓝牙适配器",
   "Sign in to this network": "登录此网络",
   "Open Captive Portal": "打开认证门户",

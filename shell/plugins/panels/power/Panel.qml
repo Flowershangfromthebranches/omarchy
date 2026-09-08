@@ -446,7 +446,7 @@ Panel {
             }
             InfoPair {
               label: root.chargeThresholdActive ? "Battery state" : (root.discharging ? "Discharging" : "Charging")
-              value: root.chargeThresholdActive ? "Holding" : (root.batteryFull ? "-" : (root.batteryInfo.rate || ""))
+              value: root.chargeThresholdActive ? I18n.tr("Holding") : (root.batteryFull ? "-" : (root.batteryInfo.rate || ""))
             }
           }
         }
@@ -516,7 +516,7 @@ Panel {
 
     InfoLabel { text: label !== "" ? I18n.tr(label) : "" }
     Item { width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth - parent.spacing * 2); height: 1 }
-    InfoValue { text: value !== "" ? I18n.tr(value) : "" }
+    InfoValue { text: value }
   }
 
   component InfoLabel: Text {

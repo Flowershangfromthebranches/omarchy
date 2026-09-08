@@ -158,6 +158,18 @@ function assertNoExternalLocalizationImports(dir) {
 }
 assertNoExternalLocalizationImports(shellDir)
 
+// Duplicate translation key detection in catalog source
+const catalogSource = fs.readFileSync(zhCatalogPath, "utf8")
+const keyMatches = [...catalogSource.matchAll(/^  "((?:\\.|[^"\\])*)"\s*:/gm)]
+const parsedKeys = keyMatches.map(m => JSON.parse('"' + m[1] + '"'))
+const seenKeys = new Set()
+const duplicateKeys = []
+for (const k of parsedKeys) {
+  if (seenKeys.has(k)) duplicateKeys.push(k)
+  seenKeys.add(k)
+}
+assert.deepStrictEqual(duplicateKeys, [], `Duplicate translation keys found in zh_CN.js: ${duplicateKeys.join(", ")}`)
+
 // ---------------------------------------------------------------------------
 // 4. Stage 1 Panel high frequency GUI texts, polish & placeholder parity
 console.log("- Test stage 1 panel GUI texts & placeholder parity...")
@@ -384,6 +396,18 @@ assert(tailscaleQmlContent.includes("translateTitle: false"), "tailscale PanelHe
 // bluetooth/Panel.qml protections
 const bluetoothQmlContent = fs.readFileSync(path.join(shellDir, "plugins/panels/bluetooth/Panel.qml"), "utf8")
 assert(bluetoothQmlContent.includes("text: root.deviceLabel(row.dev) || I18n.tr(\"Device\")"), "bluetooth DeviceRow must NOT wrap deviceLabel in I18n.tr")
+
+// power/Panel.qml protections
+const powerQmlContent = fs.readFileSync(path.join(shellDir, "plugins/panels/power/Panel.qml"), "utf8")
+assert(!powerQmlContent.includes("InfoValue { text: value !== \"\" ? I18n.tr(value) : \"\" }"), "InfoPair.value must NOT be globally passed through I18n.tr")
+assert(powerQmlContent.includes("InfoValue { text: value }"), "InfoPair.value must render directly as text: value")
+assert(powerQmlContent.includes('value: root.chargeThresholdActive ? I18n.tr("Holding")'), "Holding must be explicitly translated at call site in power/Panel.qml")
+
+const dynamicPowerValues = ["12.5 W", "15.0 W", "0 W", "-", "80%", "45 W"]
+for (const val of dynamicPowerValues) {
+  assert.strictEqual(reg.translate(val, { candidates: zhCand }), val, `Dynamic power value '${val}' must NOT be translated`)
+  assert.strictEqual(zhCatalog[val], undefined, `Catalog must not contain entry for dynamic power value '${val}'`)
+}
 
 // ---------------------------------------------------------------------------
 // 8. Technical term preservation (Zero translation)
