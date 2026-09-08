@@ -159,7 +159,7 @@ function assertNoExternalLocalizationImports(dir) {
 assertNoExternalLocalizationImports(shellDir)
 
 // ---------------------------------------------------------------------------
-// 4. Stage 1 Panel high frequency GUI texts and placeholder parity
+// 4. Stage 1 Panel high frequency GUI texts, polish & placeholder parity
 console.log("- Test stage 1 panel GUI texts & placeholder parity...")
 const stage1Strings = {
   // Network
@@ -168,13 +168,13 @@ const stage1Strings = {
   "SIGN-IN REQUIRED": "需要登录",
   "LIMITED INTERNET ACCESS": "网络访问受限",
   "NOT CONNECTED": "未连接",
-  "Wiring bits": "接通比特",
-  "Handling packets": "处理数据包",
-  "Sorting frames": "整理数据帧",
-  "Hauling bytes": "搬运字节",
-  "Routing crumbs": "碎屑路由中",
-  "Counting collisions": "统计冲突",
-  "Bending light": "折射光纤",
+  "Wiring bits": "正在接通网络",
+  "Handling packets": "正在处理数据包",
+  "Sorting frames": "正在整理数据帧",
+  "Hauling bytes": "正在传输数据",
+  "Routing crumbs": "正在寻找路由",
+  "Counting collisions": "正在检测冲突",
+  "Bending light": "正在穿越光纤",
   "Connecting...": "正在连接…",
   "Wrong password": "密码错误",
   "Passphrase required": "需要密码",
@@ -195,11 +195,6 @@ const stage1Strings = {
   "Forgetting…": "正在忘记…",
   "Copy to clipboard": "复制到剪贴板",
 
-  // Bluetooth
-  "Bluetooth": "蓝牙",
-  "Device": "设备",
-  "No Bluetooth adapter": "没有蓝牙适配器",
-
   // Audio
   "Audio": "音频",
   "SOURCES": "播放流",
@@ -210,25 +205,26 @@ const stage1Strings = {
   "TEXT SIZE": "文字大小",
   "SCALE": "缩放",
   "DISPLAYS": "显示器",
+  "focused": "当前焦点",
 
   // Power
   "Power": "电源",
   "Power Profile": "电源模式",
-  "Amassing watts": "聚集瓦特",
-  "Hoarding joules": "储备焦耳",
-  "Sucking volts": "吸取伏特",
+  "Amassing watts": "蓄积电量",
+  "Hoarding joules": "储备能量",
+  "Sucking volts": "正在取电",
   "Topping reserves": "充实储备",
-  "Soaking amps": "汲取安培",
-  "Inhaling kilowatts": "吞吐千瓦",
-  "Slurping power": "畅饮电量",
-  "Spending joules": "消耗焦耳",
-  "Draining watts": "流失瓦特",
-  "Burning electrons": "燃烧电子",
-  "Sipping juice": "轻啜电量",
-  "Spending coulombs": "消耗库仑",
-  "Bleeding amps": "消耗安培",
-  "Guzzling volts": "鲸吞伏特",
-  "Munching reserves": "咀嚼储备",
+  "Soaking amps": "注入电流",
+  "Inhaling kilowatts": "高效快充中",
+  "Slurping power": "畅享充电",
+  "Spending joules": "消耗能量",
+  "Draining watts": "消耗电量",
+  "Burning electrons": "燃烧电量",
+  "Sipping juice": "轻微耗电",
+  "Spending coulombs": "释放电荷",
+  "Bleeding amps": "释放电流",
+  "Guzzling volts": "火力全开",
+  "Munching reserves": "消耗储备",
   "Fully charged": "已充满",
   "On battery": "使用电池",
   "Threshold": "限制充电",
@@ -281,13 +277,123 @@ assert.strictEqual(
 )
 
 // ---------------------------------------------------------------------------
-// 5. Technical term preservation (Zero translation)
+// 5. Bluetooth core UI localization coverage
+console.log("- Test Bluetooth core UI localization...")
+const bluetoothCoreStrings = {
+  "Bluetooth": "蓝牙",
+  "No adapter": "无适配器",
+  "Turned Off": "已关闭",
+  "No Bluetooth adapter": "没有蓝牙适配器",
+  "Turn Bluetooth on to scan": "开启蓝牙以扫描设备",
+  "Scanning for devices…": "正在扫描设备…",
+  "Turn Bluetooth on": "开启蓝牙",
+  "Turn Bluetooth off": "关闭蓝牙",
+  "Untangling wires": "正在理顺无线链路",
+  "Streaming vikings": "维京信号流淌中",
+  "Pairing mysteries": "正在探索配对",
+  "Herding headsets": "正在搜寻耳机",
+  "Taming radios": "正在调谐射频",
+  "Summoning speakers": "正在呼唤音箱",
+  "Wrangling codecs": "正在协商编解码",
+  "Polishing packets": "正在润色数据包",
+  "Device": "设备",
+  "CONNECTED": "已连接",
+  "PAIRED": "已配对设备",
+  "AVAILABLE": "可用设备"
+}
+
+for (const [en, zh] of Object.entries(bluetoothCoreStrings)) {
+  assert.strictEqual(reg.translate(en, { candidates: zhCand }), zh, `Bluetooth core string '${en}' must translate to '${zh}'`)
+}
+
+// Bluetooth dynamic device names must never be translated
+const dynamicBluetoothDevices = [
+  "WH-1000XM6",
+  "AirPods Pro",
+  "Pixel 10 Pro",
+  "HUAWEI FreeBuds Pro 3",
+  "Sony WH-1000XM5",
+  "JBL Flip 6",
+  "Bose QuietComfort 45",
+  "Magic Keyboard",
+  "MX Master 3S"
+]
+
+for (const devName of dynamicBluetoothDevices) {
+  assert.strictEqual(
+    reg.translate(devName, { candidates: zhCand }),
+    devName,
+    `Dynamic bluetooth device name '${devName}' must NOT be translated!`
+  )
+  assert.strictEqual(zhCatalog[devName], undefined, `Catalog must not have entry for '${devName}'`)
+}
+
+// ---------------------------------------------------------------------------
+// 6. Top bar static tooltips & Bar.showTooltip regression contract
+console.log("- Test top bar tooltips & Bar.showTooltip regression contract...")
+const barTooltips = {
+  "Sign in to this network": "登录此网络",
+  "Limited internet access": "网络访问受限",
+  "Pending Omarchy Updates": "有待处理的 Omarchy 更新",
+  "Microphone muted": "麦克风已静音",
+  "Microphone in use": "麦克风正在使用",
+  "Microphone live": "麦克风已就绪",
+  "Right-click to toggle format": "右键点击切换时间格式",
+  "Stop recording": "停止录屏",
+  "Screen Recording": "屏幕录制",
+  "Allow Idle Lock & Screensaver": "允许自动锁定与屏幕保护",
+  "Stay Awake": "保持唤醒",
+  "Day Light": "日间模式",
+  "Night Light": "夜间模式",
+  "Dictate": "语音听写",
+  "Allow Notifications": "允许通知",
+  "Silence Notifications": "免打扰"
+}
+
+for (const [en, zh] of Object.entries(barTooltips)) {
+  assert.strictEqual(reg.translate(en, { candidates: zhCand }), zh, `Bar tooltip '${en}' must translate to '${zh}'`)
+}
+
+// Regression contract: Bar.showTooltip must NOT translate tooltips globally!
+const barQmlContent = fs.readFileSync(path.join(shellDir, "plugins/bar/Bar.qml"), "utf8")
+assert(
+  !barQmlContent.includes("tooltipText = I18n.tr"),
+  "Bar.qml must NOT globally wrap tooltipText in I18n.tr in showTooltip"
+)
+assert(
+  barQmlContent.includes("tooltipText = pendingTooltipText"),
+  "Bar.qml must store pendingTooltipText directly without global translation"
+)
+assert(
+  barQmlContent.includes("text: root.tooltipText"),
+  "Bar.qml tooltip label must bind directly to root.tooltipText"
+)
+
+// ---------------------------------------------------------------------------
+// 7. Dynamic text opt-out audit
+console.log("- Test dynamic text opt-out protections...")
+// agents/Panel.qml protections
+const agentsQmlContent = fs.readFileSync(path.join(shellDir, "plugins/agents/Panel.qml"), "utf8")
+assert(agentsQmlContent.includes("translateTitle: false"), "agents PanelHero must set translateTitle: false")
+assert(agentsQmlContent.includes("translateText: false"), "agents components must set translateText: false")
+
+// tailscale/Panel.qml protections
+const tailscaleQmlContent = fs.readFileSync(path.join(shellDir, "plugins/panels/tailscale/Panel.qml"), "utf8")
+assert(tailscaleQmlContent.includes("translateTitle: false"), "tailscale PanelHero must set translateTitle: false")
+
+// bluetooth/Panel.qml protections
+const bluetoothQmlContent = fs.readFileSync(path.join(shellDir, "plugins/panels/bluetooth/Panel.qml"), "utf8")
+assert(bluetoothQmlContent.includes("text: root.deviceLabel(row.dev) || I18n.tr(\"Device\")"), "bluetooth DeviceRow must NOT wrap deviceLabel in I18n.tr")
+
+// ---------------------------------------------------------------------------
+// 8. Technical term preservation (Zero translation)
 console.log("- Test technical term preservation...")
 const technicalTerms = [
   "Omarchy", "Arch Linux", "Arch", "Hyprland", "Quickshell", "Wayland", "XWayland",
   "Codex", "Claude Code", "Gemini CLI", "OpenCode", "Grok", "Copilot", "Hermes", "Crush", "Pi", "Oh My Pi",
   "Git", "GitHub", "GitHub CLI", "Docker", "systemd", "pacman", "AUR", "mise",
   "Neovim", "Vim", "Emacs", "VS Code", "Cursor", "Zed", "Helix",
+  "Chromium", "Obsidian", "LibreOffice", "Kdenlive", "OBS Studio",
   "Fcitx", "Fcitx 5", "QEMU", "VirGL", "ANGLE", "Metal",
   "PipeWire", "WirePlumber", "NetworkManager"
 ]
@@ -307,7 +413,7 @@ for (const term of technicalTerms) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Menu Search Bilingual Compatibility
+// 9. Menu Search Bilingual Compatibility
 console.log("- Test menu bilingual search compatibility...")
 const mockI18n = {
   tr: function(k) { return reg.translate(k, { candidates: zhCand }) },
@@ -339,4 +445,4 @@ assert(install, "install menu item must exist")
 assert.strictEqual(install.label, "安装")
 assert(install.aliases.includes("Install"))
 
-console.log("All 6 i18n test suites passed completely!")
+console.log("All 9 i18n test suites passed completely!")
