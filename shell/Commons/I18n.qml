@@ -36,4 +36,3 @@ QtObject {
     return tr(source)
   }
 }
-

@@ -83,4 +83,3 @@
 - **Neovim** / **Vim** / **VS Code** / **Cursor** / **Zed** / **Helix** (保留原文)
 - **PipeWire** / **WirePlumber** (保留原文)
 - **NetworkManager** (保留原文)
-

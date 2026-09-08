@@ -126,4 +126,3 @@ if (typeof module !== "undefined") {
     createRegistry: createRegistry
   }
 }
-
