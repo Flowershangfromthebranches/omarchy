@@ -75,6 +75,8 @@
 
 ## 严禁翻译的专有名词保护清单
 
+- **Agent** (保留原文，Omarchy 生态技术概念，不译为“AI 助手”)
+- **Default Agent** (默认 Agent)
 - **Codex** (保留原文)
 - **Claude Code** (保留原文)
 - **Gemini CLI** (保留原文)
@@ -92,3 +94,5 @@
 - **Neovim** / **Vim** / **VS Code** / **Cursor** / **Zed** / **Helix** (保留原文)
 - **PipeWire** / **WirePlumber** (保留原文)
 - **NetworkManager** (保留原文)
+- **sudo** (保留小写命令行规范，如“免密码 sudo”)
+

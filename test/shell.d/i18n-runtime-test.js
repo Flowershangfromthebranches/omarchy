@@ -431,7 +431,8 @@ const technicalTerms = [
   "Neovim", "Vim", "Emacs", "VS Code", "Cursor", "Zed", "Helix",
   "Chromium", "Obsidian", "LibreOffice", "Kdenlive", "OBS Studio",
   "Fcitx", "Fcitx 5", "QEMU", "VirGL", "ANGLE", "Metal",
-  "PipeWire", "WirePlumber", "NetworkManager"
+  "PipeWire", "WirePlumber", "NetworkManager",
+  "Agent"
 ]
 
 for (const term of technicalTerms) {
@@ -447,6 +448,18 @@ for (const term of technicalTerms) {
   )
   assert.strictEqual(zhCatalog[term], undefined, `Catalog must not translate technical term '${term}'`)
 }
+
+// Agent menu item and title
+assert.strictEqual(
+  reg.translate("Agent", { context: "menu:setup.default.agent", candidates: zhCand }),
+  "Agent",
+  "menu:setup.default.agent Agent must be preserved as 'Agent'"
+)
+assert.strictEqual(
+  reg.translate("Default Agent", { candidates: zhCand }),
+  "默认 Agent",
+  "Default Agent must be '默认 Agent'"
+)
 
 // ---------------------------------------------------------------------------
 // 9. Menu Search Bilingual Compatibility
