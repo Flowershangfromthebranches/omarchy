@@ -8,6 +8,8 @@
 
 set -euo pipefail
 
+shopt -u patsub_replacement 2>/dev/null || true
+
 if (( $# == 0 )); then
   exit 0
 fi
@@ -16,14 +18,20 @@ key="$1"
 fallback="$1"
 args=()
 
-if (( $# == 2 )); then
-  if [[ $1 == *"%1"* && $2 != *"%1"* ]]; then
-    fallback="$1"
-    args=("$2")
-  else
-    fallback="$2"
-  fi
-elif (( $# >= 3 )); then
+max_idx_1=0
+temp="$1"
+while [[ $temp =~ %([1-9][0-9]*) ]]; do
+  idx="${BASH_REMATCH[1]}"
+  (( idx > max_idx_1 )) && max_idx_1=$idx
+  temp="${temp#*"%${idx}"}"
+done
+
+if (( $# == 1 )); then
+  fallback="$1"
+elif (( max_idx_1 > 0 && $# == max_idx_1 + 1 )); then
+  fallback="$1"
+  args=("${@:2}")
+else
   fallback="$2"
   args=("${@:3}")
 fi
@@ -50,16 +58,35 @@ resolve_ui_locale() {
 }
 
 output_result() {
-  local text="$1"
+  local template="$1"
   shift
-  if (( $# > 0 )); then
-    local idx=1
-    for val in "$@"; do
-      text="${text//%$idx/$val}"
-      ((idx++))
-    done
-  fi
-  printf '%s\n' "$text"
+  local -a vals=("$@")
+  local result=""
+  local rem="$template"
+
+  while [[ -n $rem ]]; do
+    if [[ $rem != *%* ]]; then
+      result+="$rem"
+      break
+    fi
+    local prefix="${rem%%"%"*}"
+    result+="$prefix"
+    rem="${rem#"$prefix%"}"
+
+    if [[ $rem =~ ^([1-9][0-9]*)(.*)$ ]]; then
+      local idx="${BASH_REMATCH[1]}"
+      rem="${BASH_REMATCH[2]}"
+      local num=$((10#$idx))
+      if (( num >= 1 && num <= ${#vals[@]} )); then
+        result+="${vals[num - 1]}"
+      else
+        result+="%$idx"
+      fi
+    else
+      result+="%"
+    fi
+  done
+  printf '%s\n' "$result"
 }
 
 locale=$(resolve_ui_locale)
