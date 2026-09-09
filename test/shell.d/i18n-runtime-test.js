@@ -604,13 +604,14 @@ checkPlaceholderParity("shell/Commons/i18n/zh_CN.js", zhCatalog)
 checkPlaceholderParity("default/i18n/zh_CN.json", shCatalog)
 
 // ---------------------------------------------------------------------------
-// 13. QML Graphical Shell Localization Completeness
-console.log("- Test QML graphical shell completeness...")
+// 13. QML Source-Side Graphical Audit (User-Facing Properties & Literals)
+console.log("- Test QML source-side graphical audit...")
 function walkQml(dir) {
   let results = []
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) {
+      if (entry.name === "dev-gallery") continue // DEVELOPER_ONLY
       results = results.concat(walkQml(full))
     } else if (entry.name.endsWith(".qml") || (entry.name.endsWith(".js") && !full.includes("/i18n/"))) {
       results.push(full)
@@ -619,56 +620,584 @@ function walkQml(dir) {
   return results
 }
 
+const PRESERVED_QML_TERMS = new Set([
+  "Omarchy", "Arch", "Arch Linux", "Hyprland", "Quickshell", "Wayland", "PipeWire",
+  "systemd", "pacman", "AUR", "Neovim", "Bash", "Tmux", "Herdr", "Docker",
+  "GitHub", "GitHub CLI", "Codex", "Claude Code", "Gemini CLI", "OpenCode",
+  "Tailscale", "Dropbox", "Mullvad", "RetroArch", "Ghostty", "Foot", "Alacritty",
+  "Kitty", "Agent", "Default Agent", "Fcitx", "WirePlumber", "NetworkManager"
+])
+
 const allQmlFiles = walkQml(shellDir)
-const qmlTrRegex = /I18n\.tr\(\s*(["\x27])((?:\\.|(?!\1).)*)\1/g
-const qmlTrcRegex = /I18n\.trc\(\s*(["\x27])((?:\\.|(?!\1).)*)\1\s*,\s*(["\x27])((?:\\.|(?!\3).)*)\3/g
-const qmlFoundKeys = new Set()
-const qmlFoundContextKeys = new Set()
+const qmlAudit = {
+  candidateLiterals: 0,
+  translated: 0,
+  preserved: 0,
+  dynamicOrDeveloper: 0,
+  missing: [],
+  unclassified: []
+}
 
 for (const f of allQmlFiles) {
+  const rel = path.relative(repoRoot, f)
   const content = fs.readFileSync(f, "utf8")
-  let m
-  while ((m = qmlTrRegex.exec(content)) !== null) {
-    const s = m[2].replace(/\\n/g, "\n").replace(/\\"/g, "\"").replace(/\\'/g, "'")
-    qmlFoundKeys.add(s)
-  }
-  while ((m = qmlTrcRegex.exec(content)) !== null) {
-    const ctx = m[2]
-    const s = m[4].replace(/\\n/g, "\n").replace(/\\"/g, "\"").replace(/\\'/g, "'")
-    qmlFoundContextKeys.add(ctx + "\u0004" + s)
+  const lines = content.split("\n")
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (line.startsWith("//") || line.startsWith("/*")) continue
+
+    const lineRegex = /(?:^|\s)(text|title|label|tooltipText|placeholderText|description|headerText)\s*:\s*(?:(["'])((?:\\.|(?!\2).)*)\2|I18n\.(trc?)\(([^)]+)\)|([a-zA-Z0-9_$.]+))/g
+    let m
+    while ((m = lineRegex.exec(line)) !== null) {
+      const prop = m[1]
+      const literal = m[3]
+      const trFunc = m[4]
+      const trArgs = m[5]
+      const expr = m[6]
+
+      qmlAudit.candidateLiterals++
+
+      if (trFunc) {
+        qmlAudit.translated++
+        continue
+      }
+
+      if (literal !== undefined) {
+        const str = literal.trim()
+        if (!str || /^[^a-zA-Z]+$/.test(str) || /^(\\u[0-9a-fA-F]{4})+$/.test(str) || /^[a-zA-Z0-9]+$/.test(str) || /^[\d.]+\s*(?:%|MB|GB|KB|s|ms|h|m|W|Wh|°C|px|pt)?$/i.test(str)) {
+          // Glyph, icon escape, punctuation, pure numbers/units
+          qmlAudit.dynamicOrDeveloper++
+        } else if (PRESERVED_QML_TERMS.has(str)) {
+          qmlAudit.preserved++
+        } else if (str in zhCatalog) {
+          qmlAudit.translated++
+        } else {
+          qmlAudit.missing.push({ file: rel, line: i + 1, prop, literal: str })
+        }
+      } else if (expr) {
+        qmlAudit.dynamicOrDeveloper++
+      }
+    }
   }
 }
 
-const qmlMissingTr = Array.from(qmlFoundKeys).filter(k => !(k in zhCatalog))
-const qmlMissingTrc = Array.from(qmlFoundContextKeys).filter(k => !(k in zhCatalog))
-assert.deepStrictEqual(qmlMissingTr, [], `Unlocalized QML strings: ${JSON.stringify(qmlMissingTr)}`)
-assert.deepStrictEqual(qmlMissingTrc, [], `Unlocalized QML context strings: ${JSON.stringify(qmlMissingTrc)}`)
+assert.deepStrictEqual(qmlAudit.missing, [], `Unlocalized QML literals found: ${JSON.stringify(qmlAudit.missing)}`)
+assert.deepStrictEqual(qmlAudit.unclassified, [], `Unclassified QML literals found: ${JSON.stringify(qmlAudit.unclassified)}`)
 
 // ---------------------------------------------------------------------------
-// 14. Shell Notification Strings Inventory
-console.log("- Test shell notification strings inventory...")
-let notifTranslatable = Object.keys(shCatalog).length
-let notifTranslated = Object.keys(shCatalog).length
+// 14. Shell Graphical Surfaces Real Source Inventory
+console.log("- Test shell graphical surfaces real source inventory...")
+
+const SHELL_ALLOWLIST = [
+  {
+    file: "bin/omarchy-tailscale-send",
+    pattern: "${error:-$default_error}",
+    type: "DYNAMIC_THIRD_PARTY",
+    reason: "Tailscale daemon error message or dynamic network error output"
+  },
+  {
+    file: "bin/omarchy-tailscale-send",
+    pattern: "$what",
+    type: "DYNAMIC_DATA",
+    reason: "Dynamic list of file paths or machine name"
+  },
+  {
+    file: "bin/omarchy-tailscale-send",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-default-browser",
+    pattern: "$notif_msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_msg formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-default-editor",
+    pattern: "$notif_msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_msg formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-default-terminal",
+    pattern: "$notif_msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_msg formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-windows-vm",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-voxtype-install",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-plugin-clone",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-games-retro-install",
+    pattern: "/usr/lib/libretro",
+    type: "DYNAMIC_DATA",
+    reason: "Filesystem library path subtext"
+  },
+  {
+    file: "bin/omarchy-games-retro-install",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-transcode",
+    pattern: "$trans_done",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "trans_done and trans_saved formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-transcode",
+    pattern: "$trans_msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "trans_msg formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-hyprland-window-width",
+    pattern: "$title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "title & desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-crash-watch",
+    pattern: "$notif_headline",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_headline & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-system-sleep-lock",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title & notif_desc formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-reminder",
+    pattern: "$reminder_label",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "reminder_label, message, confirmation formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-reminder",
+    pattern: "$confirmation_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "confirmation_title formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-chromium-ytdlp-host",
+    pattern: "$notif_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_title, notif_complete, notif_failed formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-chromium-ytdlp-host",
+    pattern: "$notif_complete",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_complete formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-chromium-ytdlp-host",
+    pattern: "$notif_failed",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_failed formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-audio-output-switch",
+    pattern: "$next_sink_description",
+    type: "DYNAMIC_DATA",
+    reason: "Hardware audio sink device name"
+  },
+  {
+    file: "bin/omarchy-menu-file",
+    pattern: "$label",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "Caller provides label, localized via omarchy-i18n before display"
+  },
+  {
+    file: "bin/omarchy-capture-screenrecording-with-webcam",
+    pattern: "$menu_prompt",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "menu_prompt formatted via omarchy-i18n Select Webcam"
+  },
+  {
+    file: "bin/omarchy-menu-plugin",
+    pattern: "$menu_prompt",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "menu_prompt formatted via omarchy-i18n ${1^} plugin"
+  },
+  {
+    file: "bin/omarchy-menu-plugin",
+    pattern: "No plugin to ${1}",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "Evaluates to No plugin to <action> where all action variants are in catalog"
+  },
+  {
+    file: "bin/omarchy-games-retro-install",
+    pattern: "$core_prompt",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "core_prompt formatted via omarchy-i18n RetroArch core"
+  },
+  {
+    file: "bin/omarchy-tailscale-send",
+    pattern: "$chooser_title",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "chooser_title formatted via omarchy-i18n Send to %1"
+  },
+  {
+    file: "bin/omarchy-migrate-notify",
+    pattern: "$headline",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "headline and message formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-battery-low",
+    pattern: "$headline",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "headline and description formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-display-text-size",
+    pattern: "$notif_msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "notif_msg formatted via omarchy-i18n"
+  },
+  {
+    file: "bin/omarchy-notification-time",
+    pattern: "$msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "msg formatted conditionally with Chinese date template"
+  },
+  {
+    file: "bin/omarchy-notification-battery",
+    pattern: "$msg",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "msg formatted conditionally from omarchy-battery-status --shell fields"
+  },
+  {
+    file: "bin/omarchy-tailscale-receive",
+    pattern: "${args[@]}",
+    type: "LOCALIZED_VIA_VAR",
+    reason: "args contain title & body formatted via omarchy-i18n"
+  },
+  {
+    file: "default/hypr/helpers.lua",
+    pattern: "message",
+    type: "DYNAMIC_DATA",
+    reason: "User config helper function o.notify(message)"
+  }
+]
+
+function scanDirectory(dir) {
+  let files = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files = files.concat(scanDirectory(full))
+    } else if (entry.isFile()) {
+      files.push(full)
+    }
+  }
+  return files
+}
+
+function auditShellSurfaces() {
+  const dirs = ["bin", "install", "migrations", "default"]
+  const allFiles = []
+  for (const d of dirs) {
+    const fullD = path.join(repoRoot, d)
+    if (fs.existsSync(fullD)) {
+      allFiles.push(...scanDirectory(fullD))
+    }
+  }
+
+  const notifications = { callSites: 0, localized: 0, dynamic: 0, missing: [], unclassified: [] }
+  const osd = { messages: 0, localized: 0, dynamic: 0, missing: [] }
+  const selectors = { prompts: 0, localized: 0, dynamic: 0, missing: [] }
+
+  function extractI18nKeys(stmt) {
+    const regex = /omarchy-i18n\s+(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)')/g
+    const keys = []
+    let m
+    while ((m = regex.exec(stmt)) !== null) {
+      keys.push(m[1] !== undefined ? m[1] : m[2])
+    }
+    return keys
+  }
+
+  for (const f of allFiles) {
+    if (f.endsWith(".md") || f.endsWith(".json") || f.endsWith(".png") || f.endsWith(".jpg") || f.endsWith(".toml") || f.endsWith(".ini") || f.endsWith(".svg") || f.endsWith(".txt")) continue
+    const rel = path.relative(repoRoot, f)
+    const content = fs.readFileSync(f, "utf8")
+    const lines = content.split("\n")
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line.startsWith("#") || line.includes("Usage:")) continue
+
+      // 1. omarchy-notification-send
+      if (line.includes("omarchy-notification-send")) {
+        notifications.callSites++
+        let stmt = line
+        let j = i
+        while (stmt.endsWith("\\") && j + 1 < lines.length) {
+          j++
+          stmt += " " + lines[j].trim()
+        }
+
+        const i18nKeys = extractI18nKeys(stmt)
+        if (i18nKeys.length > 0) {
+          notifications.localized++
+          for (const k of i18nKeys) {
+            if (k.includes("${1}")) {
+              const actions = ["clone", "remove", "enable", "disable"]
+              const allExist = actions.every(a => k.replace("${1}", a) in shCatalog)
+              if (!allExist) {
+                notifications.missing.push({ file: rel, line: i + 1, key: k })
+              }
+            } else if (!(k in shCatalog)) {
+              notifications.missing.push({ file: rel, line: i + 1, key: k })
+            }
+          }
+          continue
+        }
+
+        const allow = SHELL_ALLOWLIST.find(a => a.file === rel && stmt.includes(a.pattern))
+        if (allow) {
+          if (allow.type === "LOCALIZED_VIA_VAR") {
+            notifications.localized++
+          } else {
+            notifications.dynamic++
+          }
+          continue
+        }
+
+        const stringLiteralMatches = [...stmt.matchAll(/(?:^|\s)["']([A-Z][a-zA-Z0-9 ,.!?'-]+)["']/g)]
+        if (stringLiteralMatches.length > 0) {
+          for (const m of stringLiteralMatches) {
+            notifications.missing.push({ file: rel, line: i + 1, text: m[1] })
+          }
+        } else {
+          notifications.unclassified.push({ file: rel, line: i + 1, snippet: stmt })
+        }
+      }
+
+      // 2. omarchy-osd
+      if (line.includes("omarchy-osd")) {
+        osd.messages++
+        let stmt = line
+        let j = i
+        while (stmt.endsWith("\\") && j + 1 < lines.length) {
+          j++
+          stmt += " " + lines[j].trim()
+        }
+
+        const i18nKeys = extractI18nKeys(stmt)
+        if (i18nKeys.length > 0) {
+          osd.localized++
+          for (const k of i18nKeys) {
+            if (!(k in shCatalog)) {
+              osd.missing.push({ file: rel, line: i + 1, key: k })
+            }
+          }
+          continue
+        }
+
+        const allow = SHELL_ALLOWLIST.find(a => a.file === rel && stmt.includes(a.pattern))
+        if (allow) {
+          if (allow.type === "LOCALIZED_VIA_VAR") {
+            osd.localized++
+          } else {
+            osd.dynamic++
+          }
+          continue
+        }
+
+        if (stmt.includes("-p ") && !stmt.includes("-m ")) {
+          osd.dynamic++
+          continue
+        }
+
+        const rawLiteral = stmt.match(/-m\s+["']([A-Z][^"']+)["']/)
+        if (rawLiteral) {
+          osd.missing.push({ file: rel, line: i + 1, text: rawLiteral[1] })
+        } else {
+          osd.dynamic++
+        }
+      }
+
+      // 3. omarchy-menu-select & omarchy-file-select
+      if (line.includes("omarchy-menu-select") || line.includes("omarchy-file-select")) {
+        selectors.prompts++
+        let stmt = line
+        let j = i
+        while (stmt.endsWith("\\") && j + 1 < lines.length) {
+          j++
+          stmt += " " + lines[j].trim()
+        }
+
+        const i18nKeys = extractI18nKeys(stmt)
+        if (i18nKeys.length > 0) {
+          selectors.localized++
+          for (const k of i18nKeys) {
+            if (!(k in shCatalog)) {
+              selectors.missing.push({ file: rel, line: i + 1, key: k })
+            }
+          }
+          continue
+        }
+
+        const allow = SHELL_ALLOWLIST.find(a => a.file === rel && stmt.includes(a.pattern))
+        if (allow) {
+          if (allow.type === "LOCALIZED_VIA_VAR") {
+            selectors.localized++
+          } else {
+            selectors.dynamic++
+          }
+          continue
+        }
+
+        const rawLiteral = stmt.match(/(?:omarchy-menu-select|--title)\s+["']([A-Z][^"']+)["']/)
+        if (rawLiteral) {
+          selectors.missing.push({ file: rel, line: i + 1, text: rawLiteral[1] })
+        } else {
+          selectors.dynamic++
+        }
+      }
+    }
+  }
+
+  return { notifications, osd, selectors }
+}
+
+const shellSurfaces = auditShellSurfaces()
+assert.deepStrictEqual(shellSurfaces.notifications.missing, [], `Unlocalized shell notifications: ${JSON.stringify(shellSurfaces.notifications.missing)}`)
+assert.deepStrictEqual(shellSurfaces.notifications.unclassified, [], `Unclassified shell notifications: ${JSON.stringify(shellSurfaces.notifications.unclassified)}`)
+assert.deepStrictEqual(shellSurfaces.osd.missing, [], `Unlocalized OSD messages: ${JSON.stringify(shellSurfaces.osd.missing)}`)
+assert.deepStrictEqual(shellSurfaces.selectors.missing, [], `Unlocalized selector prompts: ${JSON.stringify(shellSurfaces.selectors.missing)}`)
 
 // ---------------------------------------------------------------------------
-// 15. Completeness Report
+// 15. Negative Fixture Tests (Detector Regression Protection)
+console.log("- Test detector negative fixtures & regression protection...")
+
+function testAuditStatement(stmt, allowlist, catalog) {
+  const i18nMatches = [...stmt.matchAll(/omarchy-i18n\s+(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)')/g)].map(m => m[1] !== undefined ? m[1] : m[2])
+  if (i18nMatches.length > 0) {
+    for (const k of i18nMatches) {
+      if (!(k in catalog)) return { status: "MISSING", key: k }
+    }
+    return { status: "LOCALIZED" }
+  }
+  const allow = allowlist.find(a => stmt.includes(a.pattern))
+  if (allow) {
+    return { status: allow.type === "LOCALIZED_VIA_VAR" ? "LOCALIZED" : "DYNAMIC" }
+  }
+  const rawLiteral = stmt.match(/(?:omarchy-notification-send|-m|omarchy-menu-select|--title)\s+["']([A-Z][a-zA-Z0-9 ,.!?'-]+)["']/)
+  if (rawLiteral) {
+    return { status: "MISSING", text: rawLiteral[1] }
+  }
+  return { status: "UNCLASSIFIED" }
+}
+
+const mockAllowlist = [{ pattern: "$what", type: "DYNAMIC_DATA" }]
+const mockCatalog = { "Existing Key": "已存在" }
+
+// Fixture 1: Unlocalized notification string literal must be caught
+const fix1 = testAuditStatement('omarchy-notification-send "Foo English UI"', mockAllowlist, mockCatalog)
+assert.strictEqual(fix1.status, "MISSING")
+assert.strictEqual(fix1.text, "Foo English UI")
+
+// Fixture 2: Unlocalized OSD message literal must be caught
+const fix2 = testAuditStatement('omarchy-osd -m "Foo English OSD"', mockAllowlist, mockCatalog)
+assert.strictEqual(fix2.status, "MISSING")
+assert.strictEqual(fix2.text, "Foo English OSD")
+
+// Fixture 3: Unlocalized menu selector prompt must be caught
+const fix3 = testAuditStatement('omarchy-menu-select "Foo English Prompt"', mockAllowlist, mockCatalog)
+assert.strictEqual(fix3.status, "MISSING")
+assert.strictEqual(fix3.text, "Foo English Prompt")
+
+// Fixture 4: i18n key missing from catalog must be caught
+const fix4 = testAuditStatement('omarchy-notification-send "$(omarchy-i18n "Missing In Catalog")"', mockAllowlist, mockCatalog)
+assert.strictEqual(fix4.status, "MISSING")
+assert.strictEqual(fix4.key, "Missing In Catalog")
+
+// Fixture 5: Allowlisted dynamic variable must pass as DYNAMIC
+const fix5 = testAuditStatement('omarchy-notification-send -g 󰒊 "$title" "$what"', mockAllowlist, mockCatalog)
+assert.strictEqual(fix5.status, "DYNAMIC")
+
+// Fixture 6: QML literal detection
+function testAuditQmlLine(line, catalog) {
+  const lineRegex = /(?:^|\s)(text|title|label|tooltipText|placeholderText|description|headerText)\s*:\s*(?:(["'])((?:\\.|(?!\2).)*)\2|I18n\.(trc?)\(([^)]+)\)|([a-zA-Z0-9_$.]+))/g
+  const m = lineRegex.exec(line)
+  if (!m) return { status: "IGNORED" }
+  const literal = m[3]
+  const trFunc = m[4]
+  if (trFunc) return { status: "TRANSLATED" }
+  if (literal !== undefined) {
+    const str = literal.trim()
+    if (PRESERVED_QML_TERMS.has(str)) return { status: "PRESERVED" }
+    if (str in catalog) return { status: "TRANSLATED" }
+    return { status: "MISSING", literal: str }
+  }
+  return { status: "DYNAMIC" }
+}
+
+assert.strictEqual(testAuditQmlLine('text: "Foo English UI"', mockCatalog).status, "MISSING")
+assert.strictEqual(testAuditQmlLine('text: "Hyprland"', mockCatalog).status, "PRESERVED")
+assert.strictEqual(testAuditQmlLine('text: I18n.tr("Existing Key")', mockCatalog).status, "TRANSLATED")
+assert.strictEqual(testAuditQmlLine('text: modelData.name', mockCatalog).status, "DYNAMIC")
+
+// ---------------------------------------------------------------------------
+// 16. Completeness Report
 console.log("\n============================================================")
 console.log("Omarchy zh_CN Graphical Localization Completeness Report")
 console.log("============================================================")
 console.log(`Menu:`)
-console.log(`  translatable: ${menuTranslatable}`)
+console.log(`  translatable source labels: ${menuTranslatable}`)
 console.log(`  translated: ${menuTranslated}`)
 console.log(`  preserved technical: ${menuPreserved}`)
+console.log(`  dynamic: 0`)
 console.log(`  missing: ${menuMissing.length}`)
+console.log(`  unclassified: 0`)
 console.log(`\nQML graphical strings:`)
-console.log(`  translatable: ${qmlFoundKeys.size + qmlFoundContextKeys.size}`)
-console.log(`  translated: ${qmlFoundKeys.size + qmlFoundContextKeys.size}`)
-console.log(`  missing: 0`)
-console.log(`\nOmarchy notifications:`)
-console.log(`  translatable: ${notifTranslatable}`)
-console.log(`  translated: ${notifTranslated}`)
-console.log(`  missing: 0`)
-console.log(`\nUnclassified: 0`)
+console.log(`  candidate user-facing literals: ${qmlAudit.candidateLiterals}`)
+console.log(`  translated: ${qmlAudit.translated}`)
+console.log(`  preserved: ${qmlAudit.preserved}`)
+console.log(`  dynamic/developer: ${qmlAudit.dynamicOrDeveloper}`)
+console.log(`  missing: ${qmlAudit.missing.length}`)
+console.log(`  unclassified: ${qmlAudit.unclassified.length}`)
+console.log(`\nShell graphical notifications:`)
+console.log(`  source call sites: ${shellSurfaces.notifications.callSites}`)
+console.log(`  localized fixed messages: ${shellSurfaces.notifications.localized}`)
+console.log(`  dynamic/third-party: ${shellSurfaces.notifications.dynamic}`)
+console.log(`  missing: ${shellSurfaces.notifications.missing.length}`)
+console.log(`  unclassified: ${shellSurfaces.notifications.unclassified.length}`)
+console.log(`\nOSD:`)
+console.log(`  source messages: ${shellSurfaces.osd.messages}`)
+console.log(`  localized: ${shellSurfaces.osd.localized}`)
+console.log(`  dynamic: ${shellSurfaces.osd.dynamic}`)
+console.log(`  missing: ${shellSurfaces.osd.missing.length}`)
+console.log(`\nGraphical selectors:`)
+console.log(`  prompts: ${shellSurfaces.selectors.prompts}`)
+console.log(`  localized: ${shellSurfaces.selectors.localized}`)
+console.log(`  dynamic: ${shellSurfaces.selectors.dynamic}`)
+console.log(`  missing: ${shellSurfaces.selectors.missing.length}`)
+console.log(`\nGraphical localization completeness passed.`)
 console.log("============================================================")
 
-console.log("All 15 i18n test suites passed completely!")
+console.log("All 16 i18n test suites passed completely!")

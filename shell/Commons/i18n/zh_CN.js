@@ -461,7 +461,8 @@ var catalog = {
   "Received %1": "已接收 %1",
   "Saved to %1": "已保存到 %1",
   "Pick PNG or SVG for screensaver": "选择用于屏幕保护的 PNG 或 SVG 图片",
-  "Pick PNG or SVG for About": "选择用于关于界面的 PNG 或 SVG 图片"
+  "Pick PNG or SVG for About": "选择用于关于界面的 PNG 或 SVG 图片",
+  "Send files": "发送文件"
 }
 
 if (typeof module !== "undefined") {
