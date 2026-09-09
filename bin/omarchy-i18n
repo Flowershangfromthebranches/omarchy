@@ -36,25 +36,101 @@ else
   args=("${@:3}")
 fi
 
-resolve_ui_locale() {
-  local raw=""
+normalize_locale() {
+  local val="$1"
+  val="${val#"${val%%[![:space:]]*}"}"
+  val="${val%"${val##*[![:space:]]}"}"
+  [[ -z $val ]] && return 0
+  val="${val%%.*}"
+  val="${val%%@*}"
+  val="${val//-/_}"
+  [[ $val == "C" || $val == "POSIX" ]] && return 0
+
+  local -a raw_parts=()
+  IFS="_" read -r -a raw_parts <<< "$val"
+  local -a parts=()
+  for p in "${raw_parts[@]}"; do
+    [[ -n $p ]] && parts+=("$p")
+  done
+  (( ${#parts[@]} == 0 )) && return 0
+
+  local lang="${parts[0],,}"
+  [[ -z $lang ]] && return 0
+  local -a res=("$lang")
+  for (( i=1; i<${#parts[@]}; i++ )); do
+    local p="${parts[i]}"
+    if (( ${#p} == 4 )); then
+      local first="${p:0:1}"
+      local rest="${p:1}"
+      res+=("${first^^}${rest,,}")
+    elif (( ${#p} == 2 || ${#p} == 3 )); then
+      res+=("${p^^}")
+    else
+      res+=("$p")
+    fi
+  done
+  local joined
+  printf -v joined "%s_" "${res[@]}"
+  printf '%s' "${joined%_}"
+}
+
+resolve_candidates() {
+  local -a requested=()
   if [[ -n ${OMARCHY_UI_LANGUAGE:-} ]]; then
-    raw="$OMARCHY_UI_LANGUAGE"
+    requested=("$OMARCHY_UI_LANGUAGE")
   elif [[ -n ${LANGUAGE:-} ]]; then
-    raw="${LANGUAGE%%:*}"
+    IFS=":" read -r -a requested <<< "$LANGUAGE"
   elif [[ -n ${LC_ALL:-} ]]; then
-    raw="$LC_ALL"
+    requested=("$LC_ALL")
   elif [[ -n ${LC_MESSAGES:-} ]]; then
-    raw="$LC_MESSAGES"
+    requested=("$LC_MESSAGES")
   elif [[ -n ${LANG:-} ]]; then
-    raw="$LANG"
+    requested=("$LANG")
   fi
 
-  raw="${raw%%.*}"
-  raw="${raw%%@*}"
-  raw="${raw//-/_}"
-  [[ $raw == "C" || $raw == "POSIX" ]] && raw=""
-  printf '%s' "$raw"
+  local -a candidates=()
+  contains() {
+    local needle="$1"
+    for item in "${candidates[@]}"; do
+      [[ $item == "$needle" ]] && return 0
+    done
+    return 1
+  }
+
+  for raw in "${requested[@]}"; do
+    local norm
+    norm="$(normalize_locale "$raw")"
+    [[ -z $norm ]] && continue
+
+    local -a parts=()
+    IFS="_" read -r -a parts <<< "$norm"
+    local language="${parts[0]}"
+
+    if ! contains "$norm"; then
+      candidates+=("$norm")
+    fi
+
+    if (( ${#parts[@]} > 2 )); then
+      local script="${parts[1]}"
+      local region="${parts[2]}"
+      local langScript="${language}_${script}"
+      local langRegion="${language}_${region}"
+      if ! contains "$langScript"; then
+        candidates+=("$langScript")
+      fi
+      if ! contains "$langRegion"; then
+        candidates+=("$langRegion")
+      fi
+    fi
+
+    if ! contains "$language"; then
+      candidates+=("$language")
+    fi
+
+    [[ $language == "en" ]] && break
+  done
+
+  printf '%s\n' "${candidates[@]}"
 }
 
 output_result() {
@@ -89,27 +165,33 @@ output_result() {
   printf '%s\n' "$result"
 }
 
-locale=$(resolve_ui_locale)
-is_zh=0
-case "$locale" in
-  zh_TW|zh_HK|zh_MO|zh_Hant|zh_Hant_*)
-    is_zh=0 ;;
-  zh_CN|zh_SG|zh_Hans|zh_Hans_*)
-    is_zh=1 ;;
-  *)
-    is_zh=0 ;;
-esac
+resolved_catalog=""
+while IFS= read -r cand; do
+  [[ -z $cand ]] && continue
+  case "$cand" in
+    zh_CN|zh_SG|zh_Hans|zh_Hans_*)
+      resolved_catalog="zh_CN"
+      break
+      ;;
+    en)
+      break
+      ;;
+    zh_TW|zh_HK|zh_MO|zh_Hant|zh_Hant_*)
+      continue
+      ;;
+  esac
+done < <(resolve_candidates)
 
-if (( is_zh == 1 )); then
+if [[ -n $resolved_catalog ]]; then
   omarchy_root="${OMARCHY_PATH:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-  catalog_file="$omarchy_root/default/i18n/zh_CN.json"
+  catalog_file="$omarchy_root/default/i18n/${resolved_catalog}.json"
   if [[ -f $catalog_file ]] && command -v jq >/dev/null 2>&1; then
     translated=$(jq -r --arg k "$key" --arg f "$fallback" '.[$k] // .[$f] // empty' "$catalog_file" 2>/dev/null || true)
     if [[ -n $translated ]]; then
       if (( ${#args[@]} > 0 )); then
         output_result "$translated" "${args[@]}"
       else
-        output_result "$translated"
+        printf '%s\n' "$translated"
       fi
       exit 0
     fi
@@ -119,5 +201,5 @@ fi
 if (( ${#args[@]} > 0 )); then
   output_result "$fallback" "${args[@]}"
 else
-  output_result "$fallback"
+  printf '%s\n' "$fallback"
 fi

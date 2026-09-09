@@ -59,4 +59,46 @@ metachars='$(whoami) `date` $HOME * ? [ ] ; | > < ( ) '\'' "'
 res=$(OMARCHY_UI_LANGUAGE=en bash "$I18N_BIN" "Value: %1" "$metachars")
 [[ "$res" == "Value: $metachars" ]] || { echo "Failed: expected literal metacharacters, got $res"; exit 1; }
 
+# 12. Cross-runtime locale resolution parity (QML Model.localeCandidates vs Shell omarchy-i18n)
+parity_cases=(
+  "OMARCHY_UI_LANGUAGE=en:en"
+  "OMARCHY_UI_LANGUAGE=en_US:en"
+  "OMARCHY_UI_LANGUAGE=zh_CN:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh-CN:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh_cn:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh_SG:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh-sg:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh_Hans:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh-hans:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh_Hans_CN:zh_CN"
+  "OMARCHY_UI_LANGUAGE=zh_TW:en"
+  "OMARCHY_UI_LANGUAGE=zh-Hant:en"
+  "OMARCHY_UI_LANGUAGE=zh_HK:en"
+  "LANG=C:en"
+  "LANG=POSIX:en"
+  "LANGUAGE=fr:zh_CN:zh_CN"
+  "LANGUAGE=zh_TW:zh_CN:zh_CN"
+  "LANGUAGE=fr:en:en"
+  "LANG=zh_CN.UTF-8:zh_CN"
+  "LC_MESSAGES=zh_SG.UTF-8:zh_CN"
+)
+
+for test_case in "${parity_cases[@]}"; do
+  env_var="${test_case%:*}"
+  expected_target="${test_case##*:}"
+  var_name="${env_var%%=*}"
+  var_val="${env_var#*=}"
+
+  res=$(env -i PATH="$PATH" OMARCHY_PATH="$OMARCHY_PATH" "$var_name"="$var_val" bash "$I18N_BIN" "Pending Omarchy Migrations")
+  if [[ $expected_target == "zh_CN" ]]; then
+    expected_str="Omarchy 有待处理的迁移"
+  else
+    expected_str="Pending Omarchy Migrations"
+  fi
+  [[ "$res" == "$expected_str" ]] || {
+    echo "Locale parity failed for $env_var: expected '$expected_str', got '$res'"
+    exit 1
+  }
+done
+
 echo "ok - omarchy-i18n shell command test passed"

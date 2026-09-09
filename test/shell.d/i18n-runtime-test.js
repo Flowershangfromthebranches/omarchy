@@ -54,6 +54,18 @@ assert.deepStrictEqual(
   I18nModel.localeCandidates({ LANG: "xx_YY.UTF-8" }),
   ["xx_YY", "xx"]
 )
+assert.deepStrictEqual(
+  I18nModel.localeCandidates({ LANGUAGE: "fr:zh_CN" }),
+  ["fr", "zh_CN", "zh"]
+)
+assert.deepStrictEqual(
+  I18nModel.localeCandidates({ LANGUAGE: "zh_TW:zh_CN" }),
+  ["zh_TW", "zh", "zh_CN"]
+)
+assert.deepStrictEqual(
+  I18nModel.localeCandidates({ LANGUAGE: "fr:en" }),
+  ["fr", "en"]
+)
 
 // Registry setup matching I18n.qml behavior
 const reg = I18nModel.createRegistry()
