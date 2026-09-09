@@ -2,4 +2,18 @@
 
 # omarchy:summary=Show the current time and date notification
 
-omarchy-notification-send -g  -u low "$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")"
+if [[ $(omarchy-i18n "ui.date.locale" "en") == "zh" ]]; then
+  year=$(date +%Y)
+  month=$(date +%-m)
+  day=$(date +%-d)
+  weekday_num=$(date +%u)
+  weekdays=("" "一" "二" "三" "四" "五" "六" "日")
+  weekday="星期${weekdays[weekday_num]}"
+  time_hm=$(date +%H:%M)
+  week_num=$(date +%-V)
+  msg="${year}年${month}月${day}日 ${weekday} ${time_hm}  ·  第${week_num}周"
+else
+  msg="$(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")"
+fi
+
+omarchy-notification-send -g  -u low "$msg"

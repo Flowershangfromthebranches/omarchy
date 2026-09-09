@@ -454,7 +454,14 @@ var catalog = {
   "Reminder message": "提醒内容",
   "Remind in minutes": "提醒时间（分钟）",
   "Invalid reminder": "无效提醒",
-  "Enter the number of minutes": "请输入分钟数"
+  "Enter the number of minutes": "请输入分钟数",
+  "Click to run 1 pending migration.": "有 1 项待处理的迁移，点击运行。",
+  "Click to run %1 pending migrations.": "有 %1 项待处理的迁移，点击运行。",
+  "Pending Omarchy Migrations": "Omarchy 有待处理的迁移",
+  "Received %1": "已接收 %1",
+  "Saved to %1": "已保存到 %1",
+  "Pick PNG or SVG for screensaver": "选择用于屏幕保护的 PNG 或 SVG 图片",
+  "Pick PNG or SVG for About": "选择用于关于界面的 PNG 或 SVG 图片"
 }
 
 if (typeof module !== "undefined") {

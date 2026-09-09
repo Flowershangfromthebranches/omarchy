@@ -1,6 +1,7 @@
 {
   "Pending Omarchy Migrations": "Omarchy 有待处理的迁移",
   "notification.migrations.pending.title": "Omarchy 有待处理的迁移",
+  "Click to run 1 pending migration.": "有 1 项待处理的迁移，点击运行。",
   "Click to run %1 pending migrations.": "有 %1 项待处理的迁移，点击运行。",
   "notification.migrations.pending.body": "有 %1 项待处理的迁移，点击运行。",
   "Upcoming reminders": "即将到来的提醒",
@@ -136,5 +137,11 @@
   "Clone plugin": "克隆插件",
   "Remove plugin": "移除插件",
   "Touchpad": "触控板",
-  "Touchscreen": "触摸屏"
+  "Touchscreen": "触摸屏",
+  "Received %1": "已接收 %1",
+  "Saved to %1": "已保存到 %1",
+  "ui.date.locale": "zh",
+  "ui.battery.locale": "zh",
+  "Pick PNG or SVG for screensaver": "选择用于屏幕保护的 PNG 或 SVG 图片",
+  "Pick PNG or SVG for About": "选择用于关于界面的 PNG 或 SVG 图片"
 }

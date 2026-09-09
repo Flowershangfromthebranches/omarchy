@@ -101,4 +101,28 @@ for test_case in "${parity_cases[@]}"; do
   }
 done
 
+# 13. Tailscale receive notification localization & & safety
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Received %1" "Received A&B.mp4" "A&B.mp4")
+[[ "$res" == "已接收 A&B.mp4" ]] || { echo "Failed: expected 已接收 A&B.mp4, got $res"; exit 1; }
+
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Saved to %1" "Saved to ~/Downloads" "~/Downloads")
+[[ "$res" == "已保存到 ~/Downloads" ]] || { echo "Failed: expected 已保存到 ~/Downloads, got $res"; exit 1; }
+
+# 14. Migration notification singular and plural tests
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Click to run 1 pending migration.")
+[[ "$res" == "有 1 项待处理的迁移，点击运行。" ]] || { echo "Failed: expected 有 1 项待处理的迁移，点击运行。, got $res"; exit 1; }
+
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Click to run %1 pending migrations." "Click to run %1 pending migrations." "2")
+[[ "$res" == "有 2 项待处理的迁移，点击运行。" ]] || { echo "Failed: expected 有 2 项待处理的迁移，点击运行。, got $res"; exit 1; }
+
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Click to run %1 pending migrations." "Click to run %1 pending migrations." "18")
+[[ "$res" == "有 18 项待处理的迁移，点击运行。" ]] || { echo "Failed: expected 有 18 项待处理的迁移，点击运行。, got $res"; exit 1; }
+
+# 15. File chooser prompt localization
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Pick PNG or SVG for screensaver")
+[[ "$res" == "选择用于屏幕保护的 PNG 或 SVG 图片" ]] || { echo "Failed: expected screensaver chooser prompt, got $res"; exit 1; }
+
+res=$(OMARCHY_UI_LANGUAGE=zh_CN bash "$I18N_BIN" "Pick PNG or SVG for About")
+[[ "$res" == "选择用于关于界面的 PNG 或 SVG 图片" ]] || { echo "Failed: expected about chooser prompt, got $res"; exit 1; }
+
 echo "ok - omarchy-i18n shell command test passed"
