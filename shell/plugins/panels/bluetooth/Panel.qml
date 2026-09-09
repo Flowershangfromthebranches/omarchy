@@ -738,6 +738,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
+              textFormat: Text.PlainText
               text: I18n.tr("Bluetooth")
               color: root.bar.foreground
               font.family: root.bar.fontFamily

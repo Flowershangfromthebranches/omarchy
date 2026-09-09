@@ -521,6 +521,7 @@ Panel {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               anchors.margins: Style.space(12)
+              textFormat: Text.PlainText
               text: I18n.tr("Tailscale CLI is not installed or not on PATH.")
               color: root.dim
               font.family: root.fontFamily
@@ -639,6 +640,7 @@ Panel {
                 Text {
                   visible: root.filteredMullvadRegions.length === 0
                   width: parent.width
+                  textFormat: Text.PlainText
                   text: I18n.tr("No Mullvad regions found.")
                   color: root.dim
                   font.family: root.fontFamily
@@ -685,6 +687,7 @@ Panel {
             Text {
               visible: tailscale.installed && tailscale.active && tailscale.peers.length === 0
               width: parent.width
+              textFormat: Text.PlainText
               text: I18n.tr("No machines found on this tailnet.")
               color: root.dim
               font.family: root.fontFamily
@@ -778,6 +781,7 @@ Panel {
 
         Text {
           Layout.fillWidth: true
+          textFormat: Text.PlainText
           text: I18n.tr("Authorize Tailscale operator")
           color: root.foreground
           font.family: root.fontFamily
@@ -787,6 +791,7 @@ Panel {
 
         Text {
           Layout.fillWidth: true
+          textFormat: Text.PlainText
           text: I18n.tr("Allow this user to operate this Tailscale profile")
           color: root.dim
           font.family: root.fontFamily

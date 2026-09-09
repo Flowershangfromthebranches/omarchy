@@ -95,4 +95,3 @@
 - **PipeWire** / **WirePlumber** (保留原文)
 - **NetworkManager** (保留原文)
 - **sudo** (保留小写命令行规范，如“免密码 sudo”)
-

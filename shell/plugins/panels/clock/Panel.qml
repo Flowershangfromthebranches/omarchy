@@ -371,6 +371,7 @@ Panel {
 
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
+                  textFormat: Text.PlainText
                   text: I18n.tr("BORN")
                   color: Qt.darker(root.contentForeground, 1.5)
                   font.family: root.contentFontFamily
@@ -394,6 +395,7 @@ Panel {
                   anchors.verticalCenter: parent.verticalCenter
                   anchors.verticalCenterOffset: 0
                   leftPadding: Style.space(6)
+                  textFormat: Text.PlainText
                   text: I18n.tr("LIVE TO")
                   color: Qt.darker(root.contentForeground, 1.5)
                   font.family: root.contentFontFamily
@@ -481,6 +483,7 @@ Panel {
                 id: lifeLabel
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
+                textFormat: Text.PlainText
                 text: I18n.tr("LIFE")
                 color: Qt.darker(root.contentForeground, 1.5)
                 font.family: root.contentFontFamily
@@ -580,6 +583,7 @@ Panel {
 
                   Text {
                     anchors.centerIn: parent
+                    textFormat: Text.PlainText
                     text: I18n.tr("W")
                     color: weekStartMouse.containsMouse
                       ? Style.hoverStateColor(root.contentForeground, Color.accent)

@@ -328,6 +328,7 @@ Panel {
             Text {
               visible: dropbox.files.length === 0
               width: parent.width
+              textFormat: Text.PlainText
               text: I18n.tr("No synced files found.")
               color: root.dim
               font.family: root.fontFamily

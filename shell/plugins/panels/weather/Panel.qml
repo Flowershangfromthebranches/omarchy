@@ -683,6 +683,7 @@ Panel {
             Column {
               spacing: Style.space(5)
               Text {
+                textFormat: Text.PlainText
                 text: I18n.tr("FEELS")
                 color: Qt.darker(root.bar.foreground, 1.5)
                 font.family: root.bar.fontFamily
@@ -701,6 +702,7 @@ Panel {
             Column {
               spacing: Style.space(5)
               Text {
+                textFormat: Text.PlainText
                 text: I18n.tr("WIND")
                 color: Qt.darker(root.bar.foreground, 1.5)
                 font.family: root.bar.fontFamily
@@ -719,6 +721,7 @@ Panel {
             Column {
               spacing: Style.space(5)
               Text {
+                textFormat: Text.PlainText
                 text: I18n.tr("HUMID")
                 color: Qt.darker(root.bar.foreground, 1.5)
                 font.family: root.bar.fontFamily
@@ -792,6 +795,7 @@ Panel {
 
       Text {
         visible: !root.current
+        textFormat: Text.PlainText
         text: I18n.tr("Fetching forecast…")
         color: Qt.darker(root.bar.foreground, 1.5)
         font.family: root.bar.fontFamily

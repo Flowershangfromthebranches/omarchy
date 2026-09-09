@@ -310,6 +310,7 @@ Item {
 
           Text {
             visible: root.loading
+            textFormat: Text.PlainText
             text: I18n.tr("Generating QR code…")
             color: root.onScrimDim
             font.family: root.fontFamily
@@ -333,6 +334,7 @@ Item {
 
           Text {
             visible: root.showingQr
+            textFormat: Text.PlainText
             text: I18n.tr("Scan to join this network")
             color: root.onScrimDim
             font.family: root.fontFamily
