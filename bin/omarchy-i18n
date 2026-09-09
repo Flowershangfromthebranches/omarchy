@@ -111,15 +111,11 @@ resolve_candidates() {
     fi
 
     if (( ${#parts[@]} > 2 )); then
+      # An explicit script constrains fallback; a region must not override it.
       local script="${parts[1]}"
-      local region="${parts[2]}"
       local langScript="${language}_${script}"
-      local langRegion="${language}_${region}"
       if ! contains "$langScript"; then
         candidates+=("$langScript")
-      fi
-      if ! contains "$langRegion"; then
-        candidates+=("$langRegion")
       fi
     fi
 
@@ -183,9 +179,8 @@ while IFS= read -r cand; do
 done < <(resolve_candidates)
 
 if [[ -n $resolved_catalog ]]; then
-  omarchy_root="${OMARCHY_PATH:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-  catalog_file="$omarchy_root/default/i18n/${resolved_catalog}.json"
-  if [[ -f $catalog_file ]] && command -v jq >/dev/null 2>&1; then
+  catalog_file="$OMARCHY_PATH/default/i18n/${resolved_catalog}.json"
+  if [[ -f $catalog_file ]]; then
     translated=$(jq -r --arg k "$key" --arg f "$fallback" '.[$k] // .[$f] // empty' "$catalog_file" 2>/dev/null || true)
     if [[ -n $translated ]]; then
       if (( ${#args[@]} > 0 )); then

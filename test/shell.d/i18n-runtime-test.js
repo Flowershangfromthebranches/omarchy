@@ -37,7 +37,7 @@ assert.deepStrictEqual(
 )
 assert.deepStrictEqual(
   I18nModel.localeCandidates({ OMARCHY_UI_LANGUAGE: "zh_Hans_CN" }),
-  ["zh_Hans_CN", "zh_Hans", "zh_CN", "zh"]
+  ["zh_Hans_CN", "zh_Hans", "zh"]
 )
 assert.deepStrictEqual(
   I18nModel.localeCandidates({ OMARCHY_UI_LANGUAGE: "en", LANG: "zh_CN.UTF-8" }),
@@ -90,6 +90,18 @@ for (const fixture of localeCases) {
   assert.strictEqual(actual, fixture.expected === 'zh_CN' ? '未找到二维码' : 'No QR code found', JSON.stringify(fixture))
 }
 console.log(`  shared locale cases: ${localeCases.length}`)
+
+// Both interpolation engines must preserve literal data and multi-digit indices.
+for (const [template, args, expected] of [
+  ['%1 and %2', ['%2', 'final'], '%2 and final'],
+  ['%1/%2/%10/%11', Array.from({ length: 11 }, (_, i) => String(i + 1)), '1/2/10/11'],
+  ['%1', ['A&B 100% foo\\bar $(whoami) `date` $HOME * ? [] ; | > <'], 'A&B 100% foo\\bar $(whoami) `date` $HOME * ? [] ; | > <']
+]) {
+  assert.strictEqual(I18nModel.interpolate(template, args), expected)
+  assert.strictEqual(execFileSync('bash', [path.resolve(__dirname, '../../bin/omarchy-i18n'), template, template, ...args], {
+    env: { PATH: process.env.PATH, OMARCHY_PATH: path.resolve(__dirname, '../..'), OMARCHY_UI_LANGUAGE: 'en' }, encoding: 'utf8'
+  }).trimEnd(), expected)
+}
 
 // ---------------------------------------------------------------------------
 // 2. Context translation & Fallbacks

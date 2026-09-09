@@ -198,5 +198,95 @@
       "LANG": "xx_YY.UTF-8"
     },
     "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hant_CN"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hant-CN"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hant_SG"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hant-SG"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hant-TW"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hant-HK"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hant_MO"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hant-MO"
+    },
+    "expected": "en"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hans_TW"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hans-TW"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hans_HK"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hans-HK"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh_Hans_MO"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "OMARCHY_UI_LANGUAGE": "zh-Hans-MO"
+    },
+    "expected": "zh_CN"
+  },
+  {
+    "env": {
+      "LANGUAGE": "fr:en:zh_CN"
+    },
+    "expected": "en"
   }
 ]

@@ -46,13 +46,9 @@ function localeCandidates(environment) {
     var language = parts[0]
     if (candidates.indexOf(normalized) === -1) candidates.push(normalized)
     if (parts.length > 2) {
-      // e.g. zh_Hans_CN -> fallback to zh_Hans, zh_CN
-      var script = parts[1]
-      var region = parts[2]
-      var langScript = language + "_" + script
-      var langRegion = language + "_" + region
+      // An explicit script constrains fallback; a region must not override it.
+      var langScript = language + "_" + parts[1]
       if (candidates.indexOf(langScript) === -1) candidates.push(langScript)
-      if (candidates.indexOf(langRegion) === -1) candidates.push(langRegion)
     }
     if (candidates.indexOf(language) === -1) candidates.push(language)
     if (language === "en") break
