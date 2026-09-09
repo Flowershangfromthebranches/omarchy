@@ -5,38 +5,32 @@
 status_output=$(omarchy-battery-status)
 [[ -z $status_output ]] && exit 0
 
-if [[ $(omarchy-i18n "ui.battery.locale" "en") == "zh" ]]; then
-  declare -A fields=()
-  while IFS=$'\t' read -r k v; do
-    [[ -n $k ]] && fields["$k"]="$v"
-  done < <(omarchy-battery-status --shell)
+declare -A fields=()
+while IFS=$'\t' read -r k v; do
+  [[ -n $k ]] && fields["$k"]="$v"
+done < <(omarchy-battery-status --shell)
 
-  pct="${fields[percentage]:-}"
-  state="${fields[state]:-}"
-  rate="${fields[rate]:-}"
-  size="${fields[size]:-}"
-  time="${fields[time]:-}"
-  threshold="${fields[threshold]:-}"
+pct="${fields[percentage]:-}"
+state="${fields[state]:-}"
+rate="${fields[rate]:-}"
+size="${fields[size]:-}"
+time="${fields[time]:-}"
+threshold="${fields[threshold]:-}"
 
-  if [[ $state == "holding" ]]; then
-    msg="电池 ${pct}  ·  保持在 ${threshold}  ·  ${rate} / ${size}"
-  elif [[ $state == "charging" ]]; then
-    if [[ -n $time ]]; then
-      time_part="${time} 后充满"
-    else
-      time_part="正在充电"
-    fi
-    msg="电池 ${pct}  ·  ${time_part}  ·   ${rate} / ${size}"
+if [[ $state == "holding" ]]; then
+  msg=$(omarchy-i18n "notification.battery.holding" "$status_output" "$pct" "$threshold" "$rate" "$size")
+elif [[ $state == "charging" ]]; then
+  if [[ -n $time ]]; then
+    msg=$(omarchy-i18n "notification.battery.charging_with_time" "$status_output" "$pct" "$time" "$rate" "$size")
   else
-    if [[ -n $time ]]; then
-      time_part="剩余 ${time}"
-    else
-      time_part="正在放电"
-    fi
-    msg="电池 ${pct}  ·  ${time_part}  ·   ${rate} / ${size}"
+    msg=$(omarchy-i18n "notification.battery.charging" "$status_output" "$pct" "$rate" "$size")
   fi
 else
-  msg="$status_output"
+  if [[ -n $time ]]; then
+    msg=$(omarchy-i18n "notification.battery.discharging_with_time" "$status_output" "$pct" "$time" "$rate" "$size")
+  else
+    msg=$(omarchy-i18n "notification.battery.discharging" "$status_output" "$pct" "$rate" "$size")
+  fi
 fi
 
 omarchy-notification-send -g 󰁹 -u low "$msg"

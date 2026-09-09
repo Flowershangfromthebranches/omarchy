@@ -57,9 +57,9 @@ show_reminders() {
     [[ -f $reminder_dir/${timer%.timer}.message ]] && reminder_message=$(<"$reminder_dir/${timer%.timer}.message")
 
     if [[ -n $reminder_message ]]; then
-      body+="$reminder_message in $(format_remaining $remaining) ($(date -d "@$next" +%-H:%M))"$'\n'
+      body+="$(omarchy-i18n "notification.reminder.custom" "%1 in %2 (%3)" "$reminder_message" "$(format_remaining $remaining)" "$(date -d "@$next" +%-H:%M)")"$'\n'
     else
-      body+="${reminder_minutes}-min reminder in $(format_remaining $remaining) ($(date -d "@$next" +%-H:%M))"$'\n'
+      body+="$(omarchy-i18n "notification.reminder.default" "%1-min reminder in %2 (%3)" "$reminder_minutes" "$(format_remaining $remaining)" "$(date -d "@$next" +%-H:%M)")"$'\n'
     fi
   done < <(active_reminder_timers "$now")
 
